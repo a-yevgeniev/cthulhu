@@ -1,6 +1,6 @@
 # Development Plan — Call of Cthulhu 7e Dice Roller
 
-**Status:** Phases 1–2 complete. Phases 3–5 outstanding.
+**Status:** Phases 1–2 complete. Phase 3 mostly complete (see notes). Phases 4–5 outstanding.
 
 ---
 
@@ -119,24 +119,39 @@ screen. Natural to pick up alongside Phase 3 once there's a character to check S
 
 ---
 
-## Phase 3 — Characters
+## Phase 3 — Characters ✅ MOSTLY COMPLETE
 
-Local storage first, one JSON blob per investigator:
+Delivered as `packages/web/src/character.ts` + `CharacterContext`/`CharacterList`/
+`CharacterSheet`, a fourth tab. One localStorage-persisted JSON record per investigator
+(`Investigator` type — same shape as the plan's original sketch, plus `startingSan` /
+`sanLostThisSession` for the indefinite-insanity threshold).
 
-```json
-{
-  "id": "", "name": "", "occupation": "",
-  "characteristics": { "STR": 0, "CON": 0, "SIZ": 0, "DEX": 0, "APP": 0, "INT": 0, "POW": 0, "EDU": 0 },
-  "derived": { "hp": 0, "maxHp": 0, "mp": 0, "san": 0, "maxSan": 0, "luck": 0, "build": 0, "damageBonus": "", "mov": 0 },
-  "skills": [{ "name": "", "base": 0, "value": 0, "checked": false }],
-  "weapons": [{ "name": "", "skill": "", "damage": "", "ammo": 0, "malfunction": 0 }],
-  "inventory": [], "notes": ""
-}
-```
+Shipped:
+- Characteristics editable; HP/MP/Build/Damage Bonus/MOV recomputed live via `derivedStats()`.
+- HP/MP/SAN/Luck trackers with +/- steppers, clamped to their maxima (SAN's max is
+  `maxSanity(cthulhuMythosSkill)`).
+- **Sanity Check is the one truly auto-tracked resource**: enter a loss expression (e.g.
+  `1/1d6`), tap Check, and `sanityCheck()`'s result is applied straight to current SAN and the
+  session-loss counter — verified moving SAN 49→48 and the counter 1→2 in one isolated click.
+- Skills: tap-to-roll with an inline result badge, add/remove, checkbox for the
+  used-this-session flag `improvementCheck()` will read later.
+- Weapons: Attack rolls the linked skill; Damage rolls the weapon's dice composed with the
+  investigator's damage bonus (`damageNotation()`, reusing `rollNotation`'s own grammar rather
+  than a separate calculator).
+- 7e default skill list shipped as the template for every new investigator.
+- Import/export as a downloadable/uploadable JSON file.
+- Every roll from the sheet (skill, attack, damage, the Sanity check itself) logs into the
+  shared Roll Log from Phase 2, so Push/Spend Luck work on them too.
 
-Then: tap a skill → roll it. Tap a weapon → roll the attack, then damage with the correct
-bonus die. Auto-track HP / MP / SAN / Luck as rolls resolve. Ship the 7e default skill list as
-a template, plus import/export JSON so people can back up.
+**Deliberately not auto-tracked**: HP, MP, and Luck are manual +/- steppers, not wired to
+rolls. Unlike SAN (which has one clear owning action — the Sanity Check button on the same
+sheet), damage taken, MP spent, and Luck spent all originate from actions elsewhere (an
+opponent's attack roll, a spell, a Roll Log Luck spend) that have no "which character does
+this apply to" concept yet. Wiring that up needs an active-character/target concept this pass
+deliberately didn't build — flag it if you want that next, rather than assuming it's covered.
+
+Not yet done: `improvementCheck()` has no UI (no "run improvement rolls for every checked
+skill" button at end of scenario).
 
 `derivedStats()` and `improvementCheck()` from Phase 1 already cover the computed fields and
 end-of-scenario development.
@@ -188,6 +203,6 @@ logos, and check their current community content terms before attaching a name a
 |---|---|---|
 | 1 — Rules engine | ~2 days | Done |
 | 2 — Interface | ~3 days | Done |
-| 3 — Characters | ~3 days | Next |
+| 3 — Characters | ~3 days | Mostly done |
 | 4 — Shared table | 2–3 weeks | Track B only |
 | 5 — Polish | ~2 days | |
