@@ -11,7 +11,7 @@ import {
 } from 'coc7-engine';
 import { useCharacters } from './CharacterContext';
 import { useRollLog } from './RollLogContext';
-import { LEVEL_STYLE } from './successLevel';
+import { rollDisplay } from './successLevel';
 import { damageNotation, makeId, type CharacterSkill, type CharacterWeapon, type Investigator } from './character';
 
 const CHAR_KEYS: (keyof Characteristics)[] = ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU'];
@@ -59,7 +59,7 @@ function ResourceTracker({
 }
 
 function RollBadge({ result }: { result: SkillRollResult }) {
-  const style = LEVEL_STYLE[result.level];
+  const style = rollDisplay(result);
   return (
     <span className={`rounded px-2 py-0.5 text-xs font-semibold ${style.classes}`}>
       {result.roll} {style.label}

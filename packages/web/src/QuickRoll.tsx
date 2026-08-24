@@ -6,7 +6,7 @@ import {
   type Difficulty,
   type SkillRollResult,
 } from 'coc7-engine';
-import { LEVEL_STYLE } from './successLevel';
+import { rollDisplay } from './successLevel';
 import { useRollLog } from './RollLogContext';
 
 const DIFFICULTIES: Difficulty[] = ['regular', 'hard', 'extreme'];
@@ -29,7 +29,7 @@ export default function QuickRoll() {
     window.setTimeout(() => setRolling(false), 300);
   }
 
-  const style = result ? LEVEL_STYLE[result.level] : null;
+  const style = result ? rollDisplay(result) : null;
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">

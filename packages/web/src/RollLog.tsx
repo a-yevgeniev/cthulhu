@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import DiceGroups from './DiceGroups';
 import { useRollLog, type LogEntry, type SkillLogEntry } from './RollLogContext';
-import { LEVEL_STYLE } from './successLevel';
+import { rollDisplay } from './successLevel';
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -12,7 +12,7 @@ function SkillEntryCard({ entry }: { entry: SkillLogEntry }) {
   const [luckPoints, setLuckPoints] = useState('');
   const [luckError, setLuckError] = useState<string | null>(null);
   const { result } = entry;
-  const style = LEVEL_STYLE[result.level];
+  const style = rollDisplay(result);
 
   const canAct = !entry.consumed && !result.succeeded && !result.pushed;
 
