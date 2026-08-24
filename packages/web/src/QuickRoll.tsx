@@ -36,7 +36,7 @@ export default function QuickRoll() {
   const style = result ? LEVEL_STYLE[result.level] : null;
 
   return (
-    <div className="mx-auto flex min-h-svh max-w-md flex-col gap-6 px-4 py-8">
+    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
       <h1 className="text-center text-2xl font-semibold text-zinc-100">Quick Roll</h1>
 
       <label className="flex flex-col gap-2">
@@ -116,7 +116,7 @@ export default function QuickRoll() {
       <button
         type="button"
         onClick={roll}
-        className="mt-auto w-full rounded-2xl bg-violet-500 py-5 text-xl font-bold text-white shadow-lg shadow-violet-950/50 active:bg-violet-600"
+        className="w-full rounded-2xl bg-violet-500 py-5 text-xl font-bold text-white shadow-lg shadow-violet-950/50 active:bg-violet-600"
       >
         Roll
       </button>
