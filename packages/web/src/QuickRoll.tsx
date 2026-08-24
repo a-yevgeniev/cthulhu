@@ -6,15 +6,8 @@ import {
   type Difficulty,
   type SkillRollResult,
 } from 'coc7-engine';
-
-const LEVEL_STYLE: Record<SkillRollResult['level'], { label: string; classes: string }> = {
-  critical: { label: 'Critical', classes: 'bg-amber-400 text-amber-950' },
-  extreme: { label: 'Extreme success', classes: 'bg-emerald-400 text-emerald-950' },
-  hard: { label: 'Hard success', classes: 'bg-emerald-500/80 text-emerald-950' },
-  regular: { label: 'Success', classes: 'bg-emerald-600/70 text-emerald-50' },
-  failure: { label: 'Failure', classes: 'bg-zinc-700 text-zinc-200' },
-  fumble: { label: 'Fumble', classes: 'bg-red-700 text-red-50' },
-};
+import { LEVEL_STYLE } from './successLevel';
+import { useRollLog } from './RollLogContext';
 
 const DIFFICULTIES: Difficulty[] = ['regular', 'hard', 'extreme'];
 
@@ -24,12 +17,15 @@ export default function QuickRoll() {
   const [difficulty, setDifficulty] = useState<Difficulty>('regular');
   const [result, setResult] = useState<SkillRollResult | null>(null);
   const [rolling, setRolling] = useState(false);
+  const { addSkillEntry } = useRollLog();
 
   const thresholds = thresholdsFor(skill);
 
   function roll() {
     setRolling(true);
-    setResult(skillRoll(skill, { modifierDice, difficulty }));
+    const next = skillRoll(skill, { modifierDice, difficulty });
+    setResult(next);
+    addSkillEntry(next);
     window.setTimeout(() => setRolling(false), 300);
   }
 

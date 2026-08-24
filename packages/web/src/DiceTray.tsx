@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { isValidNotation, rollNotation, type DiceRollResult } from 'coc7-engine';
+import DiceGroups from './DiceGroups';
+import { useRollLog } from './RollLogContext';
 
 const QUICK_DICE = [3, 4, 6, 8, 10, 20, 100];
 
@@ -7,10 +9,13 @@ export default function DiceTray() {
   const [notation, setNotation] = useState('');
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { addNotationEntry } = useRollLog();
 
   function roll(expr: string) {
     try {
-      setResult(rollNotation(expr));
+      const next = rollNotation(expr);
+      setResult(next);
+      addNotationEntry(next);
       setError(null);
     } catch (err) {
       setResult(null);
@@ -82,25 +87,7 @@ export default function DiceTray() {
             <span className="text-sm text-zinc-400">{result.notation}</span>
             <span className="text-5xl font-black tabular-nums text-zinc-50">{result.total}</span>
           </div>
-          {result.groups.map((group, i) => (
-            <div key={i} className="flex items-center justify-between gap-3 text-sm">
-              <span className="shrink-0 text-zinc-400">{group.spec}</span>
-              <span className="flex flex-wrap justify-end gap-1">
-                {group.rolls.map((value, j) => (
-                  <span
-                    key={j}
-                    className={`rounded px-1.5 py-0.5 tabular-nums ${
-                      group.dropped.includes(j)
-                        ? 'text-zinc-600 line-through'
-                        : 'bg-zinc-800 text-zinc-200'
-                    }`}
-                  >
-                    {value}
-                  </span>
-                ))}
-              </span>
-            </div>
-          ))}
+          <DiceGroups groups={result.groups} />
         </div>
       )}
     </div>
