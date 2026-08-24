@@ -1,6 +1,6 @@
 # Development Plan — Call of Cthulhu 7e Dice Roller
 
-**Status:** Phase 1 complete. Phases 2–5 outstanding.
+**Status:** Phases 1–2 complete. Phases 3–5 outstanding.
 
 ---
 
@@ -86,16 +86,22 @@ costs, character generation and occupation skill points.
 
 ---
 
-## Phase 2 — Interface
+## Phase 2 — Interface ✅ COMPLETE
 
-Screens, in build order:
+Delivered as `packages/web` (React + Vite + Tailwind, npm workspace depending on
+`packages/engine`). Bottom tab bar switches between the three screens, dark theme by default.
 
-1. **Quick roll** — large skill-value input, ±dice stepper, roll button. Result shows the
-   number large, the success level as a coloured band, and the thresholds
-   (`Hard 30 / Extreme 12`) so players learn the maths.
-2. **Dice tray** — d3 / d4 / d6 / d8 / d10 / d20 / d100 buttons plus a free-text notation field.
-3. **Roll log** — persistent, scrollable, timestamped, with pushed-roll and Luck-spend buttons
-   attached to each entry.
+1. **Quick roll** ✅ — large skill-value input, ±dice stepper, difficulty picker, roll button.
+   Result shows the number large, the success level as a coloured band, and the thresholds
+   (`Hard 30 / Extreme 12`).
+2. **Dice tray** ✅ — d3 / d4 / d6 / d8 / d10 / d20 / d100 buttons plus a free-text notation
+   field, live-validated via `isValidNotation`. Result shows the total and a per-die breakdown,
+   dropped dice struck through for `kh`/`kl` specs.
+3. **Roll log** ✅ — persistent (`localStorage`, capped at 200 entries), scrollable,
+   timestamped, newest-first. Push and Spend Luck buttons attached to each failed skill entry
+   that hasn't already been acted on; each action appends a new linked entry rather than
+   mutating the original, per the engine's "nothing mutates" design — so the log holds every
+   intermediate state of a roll instead of overwriting it.
 
 Design notes specific to this game: it is played in dim rooms, often one-handed on a phone.
 Dark theme by default, thumb-reachable roll button, and a distinct fumble treatment (something
@@ -104,6 +110,12 @@ by session three.
 
 The `SkillRollResult` object already carries everything a result panel needs: the roll, the
 level, the thresholds to display, and every candidate die for a "show the dice" view.
+
+### Deferred from Phase 2
+
+Sanity checks, opposed rolls, and investigator/derived-stat screens are not yet wired into the
+UI — the engine functions exist (`sanityCheck`, `opposedRoll`, `derivedStats`, etc.) but have no
+screen. Natural to pick up alongside Phase 3 once there's a character to check Sanity *for*.
 
 ---
 
@@ -175,7 +187,7 @@ logos, and check their current community content terms before attaching a name a
 | Phase | Estimate | Status |
 |---|---|---|
 | 1 — Rules engine | ~2 days | Done |
-| 2 — Interface | ~3 days | Next |
-| 3 — Characters | ~3 days | |
+| 2 — Interface | ~3 days | Done |
+| 3 — Characters | ~3 days | Next |
 | 4 — Shared table | 2–3 weeks | Track B only |
 | 5 — Polish | ~2 days | |
