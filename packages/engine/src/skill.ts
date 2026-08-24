@@ -4,14 +4,14 @@
  */
 
 import {
-  Difficulty,
+  type Difficulty,
   LEVEL_RANK,
-  SkillRollResult,
-  SuccessLevel,
-  Thresholds,
+  type SkillRollResult,
+  type SuccessLevel,
+  type Thresholds,
   isSuccess,
 } from './types';
-import { Rng, cryptoRng, rollDie } from './rng';
+import { type Rng, cryptoRng, rollDie } from './rng';
 
 export interface SkillRollOptions {
   /** Net bonus (positive) or penalty (negative) dice. Clamped to +/-3. */

@@ -1,17 +1,15 @@
 {
-  "name": "coc7-engine",
+  "name": "coc7-dice-roller",
+  "private": true,
   "version": "0.1.0",
-  "description": "Call of Cthulhu 7e rules engine: dice, success levels, Sanity, opposed rolls. Pure logic, no dependencies.",
-  "type": "module",
-  "main": "./src/index.ts",
+  "description": "Call of Cthulhu 7e dice roller — rules engine + web app.",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "typescript": "^5.6.3",
-    "vitest": "^2.1.8"
+    "test": "npm run test --workspace=coc7-engine",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev": "npm run dev --workspace=coc7-web"
   },
   "license": "MIT"
 }

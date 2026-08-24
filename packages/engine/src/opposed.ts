@@ -9,8 +9,8 @@
  *  5. If both fail, nothing happens; the status quo holds.
  */
 
-import { LEVEL_RANK, OpposedRollResult, SkillRollResult, isSuccess } from './types';
-import { Rng, cryptoRng } from './rng';
+import { LEVEL_RANK, type OpposedRollResult, type SkillRollResult, isSuccess } from './types';
+import { type Rng, cryptoRng } from './rng';
 import { skillRoll } from './skill';
 
 export interface OpposedSide {

@@ -17,8 +17,8 @@
  * Examples: 1d6+1d4, 3d6*5, 2d10+4, d%, 4d6kh3, (1d6+2)*2
  */
 
-import { DiceGroup, DiceRollResult } from './types';
-import { Rng, cryptoRng, rollDie } from './rng';
+import type { DiceGroup, DiceRollResult } from './types';
+import { type Rng, cryptoRng, rollDie } from './rng';
 
 // ---------------------------------------------------------------- tokenizer
 

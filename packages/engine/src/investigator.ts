@@ -2,8 +2,8 @@
  * Derived investigator statistics and between-scenario development.
  */
 
-import { DerivedStats } from './types';
-import { Rng, cryptoRng } from './rng';
+import type { DerivedStats } from './types';
+import { type Rng, cryptoRng } from './rng';
 import { rollNotation } from './notation';
 import { skillRoll } from './skill';
 

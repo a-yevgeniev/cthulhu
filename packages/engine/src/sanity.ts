@@ -2,8 +2,8 @@
  * Sanity: checks, loss expressions and the three flavours of insanity.
  */
 
-import { DiceRollResult, SanityRollResult } from './types';
-import { Rng, cryptoRng } from './rng';
+import type { DiceRollResult, SanityRollResult } from './types';
+import { type Rng, cryptoRng } from './rng';
 import { rollNotation, isValidNotation } from './notation';
 import { skillRoll } from './skill';
 
