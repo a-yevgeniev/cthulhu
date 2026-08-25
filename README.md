@@ -1,6 +1,10 @@
 # coc7-dice-roller
 
-Call of Cthulhu 7th edition dice roller. npm workspaces monorepo:
+Call of Cthulhu 7th edition dice roller. Live at
+[a-yevgeniev.github.io/cthulhu](https://a-yevgeniev.github.io/cthulhu/), deployed via GitHub
+Pages on every push to `master` ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
+
+npm workspaces monorepo:
 
 - [`packages/engine`](packages/engine) — pure TypeScript rules engine (dice, success levels,
   Sanity, opposed rolls). Zero runtime dependencies, no DOM. See its README for the API.
