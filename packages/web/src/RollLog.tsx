@@ -2,24 +2,26 @@ import { useState } from 'react';
 import DiceGroups from './DiceGroups';
 import { useRollLog, type LogEntry, type SkillLogEntry } from './RollLogContext';
 import { rollDisplay } from './successLevel';
+import { useLocale } from './i18n/LocaleContext';
+import type { Translations } from './i18n/translations';
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-function SkillEntryCard({ entry }: { entry: SkillLogEntry }) {
+function SkillEntryCard({ entry, t }: { entry: SkillLogEntry; t: Translations }) {
   const { pushEntry, spendLuckOnEntry } = useRollLog();
   const [luckPoints, setLuckPoints] = useState('');
   const [luckError, setLuckError] = useState<string | null>(null);
   const { result } = entry;
-  const style = rollDisplay(result);
+  const style = rollDisplay(result, t);
 
   const canAct = !entry.consumed && !result.succeeded && !result.pushed;
 
   function spendLuck() {
     const points = Number(luckPoints);
     if (!Number.isInteger(points) || points < 1) {
-      setLuckError('Enter a positive whole number.');
+      setLuckError(t.rollLog.enterPositiveWholeNumber);
       return;
     }
     const err = spendLuckOnEntry(entry.id, points);
@@ -31,11 +33,10 @@ function SkillEntryCard({ entry }: { entry: SkillLogEntry }) {
       <div className="flex items-center justify-between text-xs text-zinc-500">
         <span>{formatTime(entry.timestamp)}</span>
         <span>
-          skill {result.skill} &middot; {result.difficulty}
-          {result.modifierDice !== 0 &&
-            ` · ${result.modifierDice > 0 ? '+' : ''}${result.modifierDice} dice`}
-          {result.pushed && ' · pushed'}
-          {result.luckSpent > 0 && ` · ${result.luckSpent} luck spent`}
+          {t.rollLog.skillLine(result.skill, t.difficulty[result.difficulty])}
+          {result.modifierDice !== 0 && t.rollLog.modifierDice(result.modifierDice)}
+          {result.pushed && t.rollLog.pushed}
+          {result.luckSpent > 0 && t.rollLog.luckSpent(result.luckSpent)}
         </span>
       </div>
 
@@ -55,13 +56,13 @@ function SkillEntryCard({ entry }: { entry: SkillLogEntry }) {
             onClick={() => pushEntry(entry.id)}
             className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 active:bg-zinc-800"
           >
-            Push
+            {t.rollLog.push}
           </button>
           <input
             type="number"
             inputMode="numeric"
             min={1}
-            placeholder="Luck"
+            placeholder={t.rollLog.luckPlaceholder}
             value={luckPoints}
             onChange={(e) => {
               setLuckPoints(e.target.value);
@@ -74,7 +75,7 @@ function SkillEntryCard({ entry }: { entry: SkillLogEntry }) {
             onClick={spendLuck}
             className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 active:bg-zinc-800"
           >
-            Spend Luck
+            {t.rollLog.spendLuck}
           </button>
         </div>
       )}
@@ -99,33 +100,32 @@ function NotationEntryCard({ entry }: { entry: Extract<LogEntry, { kind: 'notati
 }
 
 export default function RollLog() {
+  const { t } = useLocale();
   const { entries, clear } = useRollLog();
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-100">Roll Log</h1>
+        <h1 className="text-2xl font-semibold text-zinc-100">{t.rollLog.title}</h1>
         {entries.length > 0 && (
           <button
             type="button"
             onClick={clear}
             className="text-xs text-zinc-500 underline active:text-zinc-300"
           >
-            Clear
+            {t.rollLog.clear}
           </button>
         )}
       </div>
 
       {entries.length === 0 && (
-        <p className="pt-12 text-center text-sm text-zinc-500">
-          No rolls yet. Roll something on Quick Roll or Dice Tray.
-        </p>
+        <p className="pt-12 text-center text-sm text-zinc-500">{t.rollLog.empty}</p>
       )}
 
       <div className="flex flex-col gap-3">
         {entries.map((entry) =>
           entry.kind === 'skill' ? (
-            <SkillEntryCard key={entry.id} entry={entry} />
+            <SkillEntryCard key={entry.id} entry={entry} t={t} />
           ) : (
             <NotationEntryCard key={entry.id} entry={entry} />
           ),

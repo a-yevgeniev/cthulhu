@@ -12,6 +12,8 @@ import {
 import { useCharacters } from './CharacterContext';
 import { useRollLog } from './RollLogContext';
 import { rollDisplay } from './successLevel';
+import { useLocale } from './i18n/LocaleContext';
+import type { Translations } from './i18n/translations';
 import { damageNotation, makeId, type CharacterSkill, type CharacterWeapon, type Investigator } from './character';
 
 const CHAR_KEYS: (keyof Characteristics)[] = ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU'];
@@ -58,8 +60,8 @@ function ResourceTracker({
   );
 }
 
-function RollBadge({ result }: { result: SkillRollResult }) {
-  const style = rollDisplay(result);
+function RollBadge({ result, t }: { result: SkillRollResult; t: Translations }) {
+  const style = rollDisplay(result, t);
   return (
     <span className={`rounded px-2 py-0.5 text-xs font-semibold ${style.classes}`}>
       {result.roll} {style.label}
@@ -68,6 +70,7 @@ function RollBadge({ result }: { result: SkillRollResult }) {
 }
 
 export default function CharacterSheet({ id, onBack }: { id: string; onBack: () => void }) {
+  const { t } = useLocale();
   const { characters, updateCharacter, deleteCharacter } = useCharacters();
   const { addSkillEntry, addNotationEntry } = useRollLog();
   const [skillResults, setSkillResults] = useState<Record<string, SkillRollResult>>({});
@@ -83,9 +86,9 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
   if (!investigator) {
     return (
       <div className="mx-auto max-w-md px-4 py-8 text-center text-zinc-400">
-        <p>Investigator not found.</p>
+        <p>{t.sheet.notFound}</p>
         <button type="button" onClick={onBack} className="mt-4 text-violet-300 underline">
-          Back
+          {t.sheet.back}
         </button>
       </div>
     );
@@ -96,7 +99,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
   }
 
   const derived = derivedStats(investigator.characteristics, investigator.age);
-  const mythos = investigator.skills.find((s) => s.name === 'Cthulhu Mythos')?.value ?? 0;
+  const mythos = investigator.skills.find((s) => s.key === 'cthulhuMythos')?.value ?? 0;
   const maxSan = maxSanity(mythos);
 
   function rollSkill(skill: CharacterSkill) {
@@ -146,7 +149,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
       <div className="flex items-center justify-between">
         <button type="button" onClick={onBack} className="text-sm text-violet-300 underline">
-          ← Characters
+          {t.sheet.back}
         </button>
         <button
           type="button"
@@ -156,7 +159,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
           }}
           className="text-xs text-red-400 underline active:text-red-300"
         >
-          Delete
+          {t.sheet.delete}
         </button>
       </div>
 
@@ -165,7 +168,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
           type="text"
           value={investigator.name}
           onChange={(e) => patch((c) => ({ ...c, name: e.target.value }))}
-          placeholder="Investigator name"
+          placeholder={t.sheet.namePlaceholder}
           className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-xl font-bold text-zinc-50 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
         />
         <div className="flex gap-2">
@@ -173,21 +176,21 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             type="text"
             value={investigator.occupation}
             onChange={(e) => patch((c) => ({ ...c, occupation: e.target.value }))}
-            placeholder="Occupation"
+            placeholder={t.sheet.occupationPlaceholder}
             className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
           />
           <input
             type="number"
             value={investigator.age}
             onChange={(e) => patch((c) => ({ ...c, age: Number(e.target.value) }))}
-            placeholder="Age"
+            placeholder={t.sheet.agePlaceholder}
             className="w-20 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-center text-sm text-zinc-100 focus:border-violet-400 focus:outline-none"
           />
         </div>
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">Characteristics</h2>
+        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.characteristics}</h2>
         <div className="grid grid-cols-4 gap-2">
           {CHAR_KEYS.map((key) => (
             <label key={key} className="flex flex-col items-center gap-1">
@@ -209,46 +212,46 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">Derived</h2>
+        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.derivedHeading}</h2>
         <p className="text-center text-xs text-zinc-500">
-          Build {derived.build} &middot; Damage Bonus {derived.damageBonus} &middot; MOV {derived.move}
+          {t.sheet.derived(derived.build, derived.damageBonus, derived.move)}
         </p>
       </div>
 
       <div className="grid grid-cols-4 gap-2">
         <ResourceTracker
-          label="HP"
+          label={t.sheet.hp}
           current={investigator.currentHp}
           max={derived.hitPoints}
           onChange={(next) => patch((c) => ({ ...c, currentHp: clamp(next, 0, derived.hitPoints) }))}
         />
         <ResourceTracker
-          label="MP"
+          label={t.sheet.mp}
           current={investigator.currentMp}
           max={derived.magicPoints}
           onChange={(next) => patch((c) => ({ ...c, currentMp: clamp(next, 0, derived.magicPoints) }))}
         />
         <ResourceTracker
-          label="SAN"
+          label={t.sheet.san}
           current={investigator.currentSan}
           max={maxSan}
           onChange={(next) => patch((c) => ({ ...c, currentSan: clamp(next, 0, maxSan) }))}
         />
         <ResourceTracker
-          label="Luck"
+          label={t.sheet.luck}
           current={investigator.currentLuck}
           onChange={(next) => patch((c) => ({ ...c, currentLuck: clamp(next, 0, Infinity) }))}
         />
       </div>
 
       <div className="flex flex-col gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3">
-        <h2 className="text-sm font-semibold text-zinc-400">Sanity check</h2>
+        <h2 className="text-sm font-semibold text-zinc-400">{t.sheet.sanityCheck}</h2>
         <div className="flex gap-2">
           <input
             type="text"
             value={sanLoss}
             onChange={(e) => setSanLoss(e.target.value)}
-            placeholder="1/1d6"
+            placeholder={t.sheet.sanLossPlaceholder}
             className="flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-violet-400 focus:outline-none"
           />
           <button
@@ -256,34 +259,34 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             onClick={runSanityCheck}
             className="rounded-lg bg-violet-500 px-4 text-sm font-semibold text-white active:bg-violet-600"
           >
-            Check
+            {t.sheet.check}
           </button>
         </div>
         {sanError && <span className="text-xs text-red-400">{sanError}</span>}
         <div className="flex items-center justify-between text-xs text-zinc-500">
-          <span>Starting SAN {investigator.startingSan}</span>
-          <span>Lost this session: {investigator.sanLostThisSession}</span>
+          <span>{t.sheet.startingSan(investigator.startingSan)}</span>
+          <span>{t.sheet.lostThisSession(investigator.sanLostThisSession)}</span>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => patch((c) => ({ ...c, startingSan: c.currentSan }))}
               className="underline active:text-zinc-300"
             >
-              Set starting = current
+              {t.sheet.setStartingToCurrent}
             </button>
             <button
               type="button"
               onClick={() => patch((c) => ({ ...c, sanLostThisSession: 0 }))}
               className="underline active:text-zinc-300"
             >
-              Reset session
+              {t.sheet.resetSession}
             </button>
           </div>
         </div>
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">Skills</h2>
+        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.skills}</h2>
         <div className="flex flex-col gap-1">
           {investigator.skills.map((skill) => (
             <div key={skill.id} className="flex items-center gap-2 rounded-lg bg-zinc-900 px-3 py-2">
@@ -319,16 +322,16 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                 onClick={() => rollSkill(skill)}
                 className="rounded-md border border-zinc-700 px-2 py-1 text-xs font-medium text-zinc-200 active:bg-zinc-800"
               >
-                Roll
+                {t.sheet.roll}
               </button>
-              {skillResults[skill.id] && <RollBadge result={skillResults[skill.id]} />}
+              {skillResults[skill.id] && <RollBadge result={skillResults[skill.id]} t={t} />}
               <button
                 type="button"
                 onClick={() =>
                   patch((c) => ({ ...c, skills: c.skills.filter((s) => s.id !== skill.id) }))
                 }
                 className="text-zinc-600 active:text-red-400"
-                aria-label={`Remove ${skill.name}`}
+                aria-label={t.sheet.removeSkill(skill.name)}
               >
                 ×
               </button>
@@ -340,7 +343,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             type="text"
             value={newSkillName}
             onChange={(e) => setNewSkillName(e.target.value)}
-            placeholder="New skill name"
+            placeholder={t.sheet.newSkillPlaceholder}
             className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
           />
           <button
@@ -356,13 +359,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             }}
             className="rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200 active:bg-zinc-800"
           >
-            Add
+            {t.sheet.add}
           </button>
         </div>
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">Weapons</h2>
+        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.weapons}</h2>
         <div className="flex flex-col gap-2">
           {investigator.weapons.map((weapon) => (
             <div key={weapon.id} className="flex flex-col gap-2 rounded-lg bg-zinc-900 px-3 py-2">
@@ -378,7 +381,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                       ),
                     }))
                   }
-                  placeholder="Weapon name"
+                  placeholder={t.sheet.weaponNamePlaceholder}
                   className="flex-1 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
                 />
                 <button
@@ -387,7 +390,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                     patch((c) => ({ ...c, weapons: c.weapons.filter((w) => w.id !== weapon.id) }))
                   }
                   className="text-zinc-600 active:text-red-400"
-                  aria-label={`Remove ${weapon.name}`}
+                  aria-label={t.sheet.removeWeapon(weapon.name)}
                 >
                   ×
                 </button>
@@ -404,7 +407,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                       ),
                     }))
                   }
-                  placeholder="Skill (e.g. Fighting (Brawl))"
+                  placeholder={t.sheet.weaponSkillPlaceholder}
                   className="flex-1 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
                 />
                 <input
@@ -418,7 +421,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                       ),
                     }))
                   }
-                  placeholder="Damage (e.g. 1d6)"
+                  placeholder={t.sheet.weaponDamagePlaceholder}
                   className="w-28 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
                 />
               </div>
@@ -428,21 +431,21 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                   onClick={() => rollWeaponAttack(weapon)}
                   className="rounded-md border border-zinc-700 px-2 py-1 text-xs font-medium text-zinc-200 active:bg-zinc-800"
                 >
-                  Attack
+                  {t.sheet.attack}
                 </button>
                 <button
                   type="button"
                   onClick={() => rollWeaponDamage(weapon)}
                   className="rounded-md border border-zinc-700 px-2 py-1 text-xs font-medium text-zinc-200 active:bg-zinc-800"
                 >
-                  Damage
+                  {t.sheet.damage}
                 </button>
                 {weaponResults[weapon.id] &&
                   ('level' in weaponResults[weapon.id] ? (
-                    <RollBadge result={weaponResults[weapon.id] as SkillRollResult} />
+                    <RollBadge result={weaponResults[weapon.id] as SkillRollResult} t={t} />
                   ) : (
                     <span className="text-sm font-semibold text-zinc-200">
-                      {(weaponResults[weapon.id] as DiceRollResult).total} dmg
+                      {(weaponResults[weapon.id] as DiceRollResult).total} {t.sheet.dmg}
                     </span>
                   ))}
               </div>
@@ -454,7 +457,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             type="text"
             value={newWeaponName}
             onChange={(e) => setNewWeaponName(e.target.value)}
-            placeholder="New weapon name"
+            placeholder={t.sheet.newWeaponPlaceholder}
             className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
           />
           <button
@@ -470,13 +473,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             }}
             className="rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200 active:bg-zinc-800"
           >
-            Add
+            {t.sheet.add}
           </button>
         </div>
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">Inventory</h2>
+        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.inventory}</h2>
         <div className="flex flex-wrap gap-2">
           {investigator.inventory.map((item, i) => (
             <span
@@ -490,7 +493,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                   patch((c) => ({ ...c, inventory: c.inventory.filter((_, j) => j !== i) }))
                 }
                 className="text-zinc-500 active:text-red-400"
-                aria-label={`Remove ${item}`}
+                aria-label={t.sheet.removeItem(item)}
               >
                 ×
               </button>
@@ -502,7 +505,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             type="text"
             value={inventoryItem}
             onChange={(e) => setInventoryItem(e.target.value)}
-            placeholder="Add item"
+            placeholder={t.sheet.addItemPlaceholder}
             className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
           />
           <button
@@ -515,13 +518,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             }}
             className="rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200 active:bg-zinc-800"
           >
-            Add
+            {t.sheet.add}
           </button>
         </div>
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">Notes</h2>
+        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.notes}</h2>
         <textarea
           value={investigator.notes}
           onChange={(e) => patch((c) => ({ ...c, notes: e.target.value }))}

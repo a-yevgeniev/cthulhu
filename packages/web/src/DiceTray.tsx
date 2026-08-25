@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { isValidNotation, rollNotation, type DiceRollResult } from 'coc7-engine';
 import DiceGroups from './DiceGroups';
 import { useRollLog } from './RollLogContext';
+import { useLocale } from './i18n/LocaleContext';
 
 const QUICK_DICE = [3, 4, 6, 8, 10, 20, 100];
 
 export default function DiceTray() {
+  const { t } = useLocale();
   const [notation, setNotation] = useState('');
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export default function DiceTray() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
-      <h1 className="text-center text-2xl font-semibold text-zinc-100">Dice Tray</h1>
+      <h1 className="text-center text-2xl font-semibold text-zinc-100">{t.diceTray.title}</h1>
 
       <div className="grid grid-cols-4 gap-3">
         {QUICK_DICE.map((sides) => (
@@ -53,14 +55,14 @@ export default function DiceTray() {
       </div>
 
       <label className="flex flex-col gap-2">
-        <span className="text-sm text-zinc-400">Notation</span>
+        <span className="text-sm text-zinc-400">{t.diceTray.notation}</span>
         <div className="flex gap-2">
           <input
             type="text"
             value={notation}
             onChange={(e) => setNotation(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && rollFreeText()}
-            placeholder="2d6+3, 4d6kh3, (1d6+2)*2..."
+            placeholder={t.diceTray.notationPlaceholder}
             className={`flex-1 rounded-xl border bg-zinc-900 px-4 py-3 text-zinc-50 placeholder:text-zinc-600 focus:outline-none ${
               notationInvalid ? 'border-red-500' : 'border-zinc-700 focus:border-violet-400'
             }`}
@@ -71,12 +73,10 @@ export default function DiceTray() {
             disabled={notation.trim() === '' || notationInvalid}
             className="rounded-xl bg-violet-500 px-5 font-semibold text-white disabled:opacity-40 active:bg-violet-600"
           >
-            Roll
+            {t.diceTray.roll}
           </button>
         </div>
-        {notationInvalid && (
-          <span className="text-xs text-red-400">Can't parse that expression.</span>
-        )}
+        {notationInvalid && <span className="text-xs text-red-400">{t.diceTray.cantParse}</span>}
       </label>
 
       {error && !notationInvalid && <p className="text-center text-sm text-red-400">{error}</p>}

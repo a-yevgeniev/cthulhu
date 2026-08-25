@@ -3,6 +3,9 @@ import type { Characteristics } from 'coc7-engine';
 export interface CharacterSkill {
   id: string;
   name: string;
+  /** Stable identifier for a default-list skill (e.g. 'cthulhuMythos'), used to find it by
+   * meaning rather than by its localized display name. Absent on user-added custom skills. */
+  key?: string;
   value: number;
   /** Marked when used this session — feeds the end-of-scenario improvement check. */
   checked: boolean;
@@ -37,63 +40,65 @@ export interface Investigator {
   notes: string;
 }
 
-/** Base chances from the 7e default skill list. Dodge and Language (Own) are
- * characteristic-derived (DEX/2, EDU) and left at 0 for the player to fill in. */
-export const DEFAULT_SKILLS: Array<{ name: string; value: number }> = [
-  { name: 'Accounting', value: 5 },
-  { name: 'Anthropology', value: 1 },
-  { name: 'Appraise', value: 5 },
-  { name: 'Archaeology', value: 1 },
-  { name: 'Art/Craft', value: 5 },
-  { name: 'Charm', value: 15 },
-  { name: 'Climb', value: 20 },
-  { name: 'Credit Rating', value: 0 },
-  { name: 'Cthulhu Mythos', value: 0 },
-  { name: 'Disguise', value: 5 },
-  { name: 'Dodge', value: 0 },
-  { name: 'Drive Auto', value: 20 },
-  { name: 'Electrical Repair', value: 10 },
-  { name: 'Electronics', value: 1 },
-  { name: 'Fast Talk', value: 5 },
-  { name: 'Fighting (Brawl)', value: 25 },
-  { name: 'Firearms (Handgun)', value: 20 },
-  { name: 'Firearms (Rifle/Shotgun)', value: 25 },
-  { name: 'First Aid', value: 30 },
-  { name: 'History', value: 5 },
-  { name: 'Intimidate', value: 15 },
-  { name: 'Jump', value: 20 },
-  { name: 'Language (Own)', value: 0 },
-  { name: 'Language (Other)', value: 1 },
-  { name: 'Law', value: 5 },
-  { name: 'Library Use', value: 20 },
-  { name: 'Listen', value: 20 },
-  { name: 'Locksmith', value: 1 },
-  { name: 'Mechanical Repair', value: 10 },
-  { name: 'Medicine', value: 1 },
-  { name: 'Natural World', value: 10 },
-  { name: 'Navigate', value: 10 },
-  { name: 'Occult', value: 5 },
-  { name: 'Operate Heavy Machinery', value: 1 },
-  { name: 'Persuade', value: 10 },
-  { name: 'Pilot', value: 1 },
-  { name: 'Psychology', value: 10 },
-  { name: 'Psychoanalysis', value: 1 },
-  { name: 'Ride', value: 5 },
-  { name: 'Science', value: 1 },
-  { name: 'Sleight of Hand', value: 10 },
-  { name: 'Spot Hidden', value: 25 },
-  { name: 'Stealth', value: 20 },
-  { name: 'Survival', value: 10 },
-  { name: 'Swim', value: 20 },
-  { name: 'Throw', value: 20 },
-  { name: 'Track', value: 10 },
+/** Base chances from the 7e default skill list, keyed by a stable identifier so lookups
+ * (e.g. finding Cthulhu Mythos) survive the display name being localized. Dodge and
+ * Language (Own) are characteristic-derived (DEX/2, EDU) and left at 0 for the player to
+ * fill in. Display names come from `Translations.skills[key]` — see i18n/translations.ts. */
+export const DEFAULT_SKILLS: Array<{ key: string; value: number }> = [
+  { key: 'accounting', value: 5 },
+  { key: 'anthropology', value: 1 },
+  { key: 'appraise', value: 5 },
+  { key: 'archaeology', value: 1 },
+  { key: 'artCraft', value: 5 },
+  { key: 'charm', value: 15 },
+  { key: 'climb', value: 20 },
+  { key: 'creditRating', value: 0 },
+  { key: 'cthulhuMythos', value: 0 },
+  { key: 'disguise', value: 5 },
+  { key: 'dodge', value: 0 },
+  { key: 'driveAuto', value: 20 },
+  { key: 'electricalRepair', value: 10 },
+  { key: 'electronics', value: 1 },
+  { key: 'fastTalk', value: 5 },
+  { key: 'fightingBrawl', value: 25 },
+  { key: 'firearmsHandgun', value: 20 },
+  { key: 'firearmsRifleShotgun', value: 25 },
+  { key: 'firstAid', value: 30 },
+  { key: 'history', value: 5 },
+  { key: 'intimidate', value: 15 },
+  { key: 'jump', value: 20 },
+  { key: 'languageOwn', value: 0 },
+  { key: 'languageOther', value: 1 },
+  { key: 'law', value: 5 },
+  { key: 'libraryUse', value: 20 },
+  { key: 'listen', value: 20 },
+  { key: 'locksmith', value: 1 },
+  { key: 'mechanicalRepair', value: 10 },
+  { key: 'medicine', value: 1 },
+  { key: 'naturalWorld', value: 10 },
+  { key: 'navigate', value: 10 },
+  { key: 'occult', value: 5 },
+  { key: 'operateHeavyMachinery', value: 1 },
+  { key: 'persuade', value: 10 },
+  { key: 'pilot', value: 1 },
+  { key: 'psychology', value: 10 },
+  { key: 'psychoanalysis', value: 1 },
+  { key: 'ride', value: 5 },
+  { key: 'science', value: 1 },
+  { key: 'sleightOfHand', value: 10 },
+  { key: 'spotHidden', value: 25 },
+  { key: 'stealth', value: 20 },
+  { key: 'survival', value: 10 },
+  { key: 'swim', value: 20 },
+  { key: 'throwSkill', value: 20 },
+  { key: 'track', value: 10 },
 ];
 
 export function makeId(): string {
   return crypto.randomUUID();
 }
 
-export function createBlankInvestigator(): Investigator {
+export function createBlankInvestigator(skillLabels: Record<string, string>): Investigator {
   return {
     id: makeId(),
     name: '',
@@ -106,7 +111,13 @@ export function createBlankInvestigator(): Investigator {
     startingSan: 0,
     sanLostThisSession: 0,
     currentLuck: 0,
-    skills: DEFAULT_SKILLS.map((s) => ({ id: makeId(), name: s.name, value: s.value, checked: false })),
+    skills: DEFAULT_SKILLS.map((s) => ({
+      id: makeId(),
+      key: s.key,
+      name: skillLabels[s.key] ?? s.key,
+      value: s.value,
+      checked: false,
+    })),
     weapons: [],
     inventory: [],
     notes: '',

@@ -8,10 +8,12 @@ import {
 } from 'coc7-engine';
 import { rollDisplay } from './successLevel';
 import { useRollLog } from './RollLogContext';
+import { useLocale } from './i18n/LocaleContext';
 
 const DIFFICULTIES: Difficulty[] = ['regular', 'hard', 'extreme'];
 
 export default function QuickRoll() {
+  const { t } = useLocale();
   const [skill, setSkill] = useState(50);
   const [modifierDice, setModifierDice] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>('regular');
@@ -29,14 +31,14 @@ export default function QuickRoll() {
     window.setTimeout(() => setRolling(false), 300);
   }
 
-  const style = result ? rollDisplay(result) : null;
+  const style = result ? rollDisplay(result, t) : null;
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
-      <h1 className="text-center text-2xl font-semibold text-zinc-100">Quick Roll</h1>
+      <h1 className="text-center text-2xl font-semibold text-zinc-100">{t.quickRoll.title}</h1>
 
       <label className="flex flex-col gap-2">
-        <span className="text-sm text-zinc-400">Skill value</span>
+        <span className="text-sm text-zinc-400">{t.quickRoll.skillValue}</span>
         <input
           type="number"
           inputMode="numeric"
@@ -51,21 +53,20 @@ export default function QuickRoll() {
       <div className="flex items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3">
         <button
           type="button"
-          aria-label="Fewer bonus dice / more penalty dice"
+          aria-label={t.quickRoll.fewerBonusMorePenalty}
           onClick={() => setModifierDice((m) => Math.max(-MAX_MODIFIER_DICE, m - 1))}
           className="grid h-11 w-11 place-items-center rounded-full bg-zinc-800 text-xl text-zinc-100 active:bg-zinc-700"
         >
           −
         </button>
         <span className="text-center text-sm text-zinc-300">
-          {modifierDice === 0 && 'No modifier dice'}
-          {modifierDice > 0 && `${modifierDice} bonus ${modifierDice === 1 ? 'die' : 'dice'}`}
-          {modifierDice < 0 &&
-            `${Math.abs(modifierDice)} penalty ${Math.abs(modifierDice) === 1 ? 'die' : 'dice'}`}
+          {modifierDice === 0 && t.quickRoll.noModifierDice}
+          {modifierDice > 0 && t.quickRoll.bonusDice(modifierDice)}
+          {modifierDice < 0 && t.quickRoll.penaltyDice(Math.abs(modifierDice))}
         </span>
         <button
           type="button"
-          aria-label="More bonus dice / fewer penalty dice"
+          aria-label={t.quickRoll.moreBonusFewerPenalty}
           onClick={() => setModifierDice((m) => Math.min(MAX_MODIFIER_DICE, m + 1))}
           className="grid h-11 w-11 place-items-center rounded-full bg-zinc-800 text-xl text-zinc-100 active:bg-zinc-700"
         >
@@ -79,20 +80,19 @@ export default function QuickRoll() {
             key={d}
             type="button"
             onClick={() => setDifficulty(d)}
-            className={`flex-1 rounded-xl border px-3 py-2 text-sm capitalize transition-colors ${
+            className={`flex-1 rounded-xl border px-3 py-2 text-sm transition-colors ${
               difficulty === d
                 ? 'border-violet-400 bg-violet-500/20 text-violet-200'
                 : 'border-zinc-700 bg-zinc-900 text-zinc-400'
             }`}
           >
-            {d}
+            {t.difficulty[d]}
           </button>
         ))}
       </div>
 
       <p className="text-center text-xs text-zinc-500">
-        Regular {thresholds.regular} &middot; Hard {thresholds.hard} &middot; Extreme{' '}
-        {thresholds.extreme}
+        {t.quickRoll.thresholds(thresholds.regular, thresholds.hard, thresholds.extreme)}
       </p>
 
       {result && style && (
@@ -104,7 +104,9 @@ export default function QuickRoll() {
           <span className="text-6xl font-black tabular-nums">{result.roll}</span>
           <span className="text-lg font-semibold uppercase tracking-wide">{style.label}</span>
           {result.candidates.length > 1 && (
-            <span className="text-xs opacity-80">candidates: {result.candidates.join(', ')}</span>
+            <span className="text-xs opacity-80">
+              {t.quickRoll.candidates(result.candidates.join(', '))}
+            </span>
           )}
         </div>
       )}
@@ -114,7 +116,7 @@ export default function QuickRoll() {
         onClick={roll}
         className="w-full rounded-2xl bg-violet-500 py-5 text-xl font-bold text-white shadow-lg shadow-violet-950/50 active:bg-violet-600"
       >
-        Roll
+        {t.quickRoll.roll}
       </button>
     </div>
   );

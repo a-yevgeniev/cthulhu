@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useCharacters } from './CharacterContext';
+import { useLocale } from './i18n/LocaleContext';
 import type { Investigator } from './character';
 
 function exportCharacter(investigator: Investigator) {
@@ -13,12 +14,13 @@ function exportCharacter(investigator: Investigator) {
 }
 
 export default function CharacterList({ onOpen }: { onOpen: (id: string) => void }) {
+  const { t } = useLocale();
   const { characters, createCharacter, deleteCharacter, importCharacter } = useCharacters();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
   function handleNew() {
-    onOpen(createCharacter());
+    onOpen(createCharacter(t));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -26,12 +28,12 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
     e.target.value = '';
     if (!file) return;
     const text = await file.text();
-    setImportError(importCharacter(text));
+    setImportError(importCharacter(text, t));
   }
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-8">
-      <h1 className="text-2xl font-semibold text-zinc-100">Characters</h1>
+      <h1 className="text-2xl font-semibold text-zinc-100">{t.characters.title}</h1>
 
       <div className="flex gap-2">
         <button
@@ -39,14 +41,14 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
           onClick={handleNew}
           className="flex-1 rounded-xl bg-violet-500 py-3 font-semibold text-white active:bg-violet-600"
         >
-          + New
+          {t.characters.new}
         </button>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="rounded-xl border border-zinc-700 px-4 py-3 text-sm text-zinc-200 active:bg-zinc-800"
         >
-          Import
+          {t.characters.import}
         </button>
         <input
           ref={fileInputRef}
@@ -59,7 +61,7 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
       {importError && <p className="text-sm text-red-400">{importError}</p>}
 
       {characters.length === 0 && (
-        <p className="pt-12 text-center text-sm text-zinc-500">No investigators yet.</p>
+        <p className="pt-12 text-center text-sm text-zinc-500">{t.characters.empty}</p>
       )}
 
       <div className="flex flex-col gap-2">
@@ -70,23 +72,25 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
           >
             <button type="button" onClick={() => onOpen(c.id)} className="flex-1 text-left">
               <span className="block font-semibold text-zinc-100">
-                {c.name.trim() || 'Unnamed investigator'}
+                {c.name.trim() || t.characters.unnamed}
               </span>
-              <span className="block text-xs text-zinc-500">{c.occupation || 'No occupation'}</span>
+              <span className="block text-xs text-zinc-500">
+                {c.occupation || t.characters.noOccupation}
+              </span>
             </button>
             <button
               type="button"
               onClick={() => exportCharacter(c)}
               className="shrink-0 text-xs text-zinc-500 underline active:text-zinc-300"
             >
-              Export
+              {t.characters.export}
             </button>
             <button
               type="button"
               onClick={() => deleteCharacter(c.id)}
               className="shrink-0 text-xs text-red-400 underline active:text-red-300"
             >
-              Delete
+              {t.characters.delete}
             </button>
           </div>
         ))}

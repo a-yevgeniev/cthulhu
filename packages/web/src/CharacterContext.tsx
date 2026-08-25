@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createBlankInvestigator, makeId, type Investigator } from './character';
+import type { Translations } from './i18n/translations';
 
 const STORAGE_KEY = 'coc7-characters';
 
@@ -16,11 +17,11 @@ function loadCharacters(): Investigator[] {
 
 interface CharacterContextValue {
   characters: Investigator[];
-  createCharacter: () => string;
+  createCharacter: (t: Translations) => string;
   updateCharacter: (id: string, updater: (c: Investigator) => Investigator) => void;
   deleteCharacter: (id: string) => void;
   /** Returns an error message, or null on success. */
-  importCharacter: (json: string) => string | null;
+  importCharacter: (json: string, t: Translations) => string | null;
 }
 
 const CharacterContext = createContext<CharacterContextValue | null>(null);
@@ -35,8 +36,8 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CharacterContextValue>(
     () => ({
       characters,
-      createCharacter() {
-        const c = createBlankInvestigator();
+      createCharacter(t) {
+        const c = createBlankInvestigator(t.skills);
         setCharacters((prev) => [c, ...prev]);
         return c.id;
       },
@@ -46,22 +47,22 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
       deleteCharacter(id) {
         setCharacters((prev) => prev.filter((c) => c.id !== id));
       },
-      importCharacter(json) {
+      importCharacter(json, t) {
         let parsed: unknown;
         try {
           parsed = JSON.parse(json);
         } catch {
-          return "Couldn't parse that file as JSON.";
+          return t.characters.couldNotParseJson;
         }
         if (
           !parsed ||
           typeof parsed !== 'object' ||
           typeof (parsed as { characteristics?: unknown }).characteristics !== 'object'
         ) {
-          return 'Not a valid investigator file.';
+          return t.characters.notAValidFile;
         }
         const imported: Investigator = {
-          ...createBlankInvestigator(),
+          ...createBlankInvestigator(t.skills),
           ...(parsed as Investigator),
           id: makeId(),
         };
