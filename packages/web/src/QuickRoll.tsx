@@ -10,6 +10,7 @@ import { rollDisplay } from './successLevel';
 import { useRollLog } from './RollLogContext';
 import { useLocale } from './i18n/LocaleContext';
 import Die, { TOTAL_ANIMATION_MS } from './Die';
+import ThresholdTrack from './ThresholdTrack';
 
 const DIFFICULTIES: Difficulty[] = ['regular', 'hard', 'extreme'];
 
@@ -42,44 +43,60 @@ export default function QuickRoll() {
   const style = result ? rollDisplay(result, t) : null;
   const isFumble = revealed && result?.level === 'fumble';
   const isCritical = revealed && result?.level === 'critical';
+  const chosenIndex = result ? result.candidates.indexOf(result.roll) : -1;
+  const multiCandidate = (result?.candidates.length ?? 0) > 1;
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
-      <label className="flex flex-col gap-2">
-        <span className="text-sm text-zinc-400">{t.quickRoll.skillValue}</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={100}
-          value={skill}
-          onChange={(e) => setSkill(Number(e.target.value))}
-          className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-center text-4xl font-bold text-zinc-50 focus:border-violet-400 focus:outline-none"
-        />
-      </label>
-
-      <div className="flex items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3">
-        <button
-          type="button"
-          aria-label={t.quickRoll.fewerBonusMorePenalty}
-          onClick={() => setModifierDice((m) => Math.max(-MAX_MODIFIER_DICE, m - 1))}
-          className="grid h-11 w-11 place-items-center rounded-full bg-zinc-800 text-xl text-zinc-100 active:bg-zinc-700"
-        >
-          −
-        </button>
-        <span className="text-center text-sm text-zinc-300">
-          {modifierDice === 0 && t.quickRoll.noModifierDice}
-          {modifierDice > 0 && t.quickRoll.bonusDice(modifierDice)}
-          {modifierDice < 0 && t.quickRoll.penaltyDice(Math.abs(modifierDice))}
-        </span>
-        <button
-          type="button"
-          aria-label={t.quickRoll.moreBonusFewerPenalty}
-          onClick={() => setModifierDice((m) => Math.min(MAX_MODIFIER_DICE, m + 1))}
-          className="grid h-11 w-11 place-items-center rounded-full bg-zinc-800 text-xl text-zinc-100 active:bg-zinc-700"
-        >
-          +
-        </button>
+    <div className="mx-auto flex max-w-md flex-col gap-7 px-4 py-6">
+      <div className="grid grid-cols-[1fr_auto] items-end gap-4 border-b border-ink-line pb-4">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[10px] uppercase tracking-widest text-paper-dim">
+            {t.quickRoll.skillValue}
+          </span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={100}
+            value={skill}
+            onChange={(e) => setSkill(Number(e.target.value))}
+            className="border-0 border-b border-ink-line bg-transparent pb-1 font-display text-4xl text-paper outline-none focus:border-brass"
+          />
+        </label>
+        <div className="flex flex-col items-end gap-1.5">
+          <span className="text-[10px] uppercase tracking-widest text-paper-dim">
+            {t.quickRoll.dice}
+          </span>
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              aria-label={t.quickRoll.fewerBonusMorePenalty}
+              onClick={() => setModifierDice((m) => Math.max(-MAX_MODIFIER_DICE, m - 1))}
+              className="h-9 w-9 border border-ink-line text-paper-dim transition-colors hover:border-brass hover:text-paper"
+            >
+              −
+            </button>
+            <span
+              className={`min-w-[76px] text-center text-[13px] ${
+                modifierDice > 0 ? 'text-verdigris' : modifierDice < 0 ? 'text-oxblood' : 'text-paper'
+              }`}
+            >
+              {modifierDice === 0
+                ? t.quickRoll.noModifierDice
+                : modifierDice > 0
+                  ? t.quickRoll.bonusDice(modifierDice)
+                  : t.quickRoll.penaltyDice(modifierDice)}
+            </span>
+            <button
+              type="button"
+              aria-label={t.quickRoll.moreBonusFewerPenalty}
+              onClick={() => setModifierDice((m) => Math.min(MAX_MODIFIER_DICE, m + 1))}
+              className="h-9 w-9 border border-ink-line text-paper-dim transition-colors hover:border-brass hover:text-paper"
+            >
+              +
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -88,10 +105,8 @@ export default function QuickRoll() {
             key={d}
             type="button"
             onClick={() => setDifficulty(d)}
-            className={`flex-1 rounded-xl border px-3 py-2 text-sm transition-colors ${
-              difficulty === d
-                ? 'border-violet-400 bg-violet-500/20 text-violet-200'
-                : 'border-zinc-700 bg-zinc-900 text-zinc-400'
+            className={`flex-1 border py-2 text-xs uppercase tracking-wider transition-colors ${
+              difficulty === d ? 'border-brass text-brass' : 'border-ink-line text-paper-dim'
             }`}
           >
             {t.difficulty[d]}
@@ -99,34 +114,73 @@ export default function QuickRoll() {
         ))}
       </div>
 
-      <p className="text-center text-xs text-zinc-500">
-        {t.quickRoll.thresholds(thresholds.regular, thresholds.hard, thresholds.extreme)}
-      </p>
+      <div className="flex min-h-[200px] flex-col items-center justify-center gap-5 py-2">
+        {result && (
+          <div className="flex min-h-[76px] items-center gap-3">
+            {result.raw.tens.map((tensValue, i) => (
+              <Die
+                key={i}
+                value={tensValue}
+                variant="tens"
+                spinKey={spinKey}
+                size="md"
+                kind={t.quickRoll.tensLabel}
+                kept={multiCandidate && i === chosenIndex}
+                discarded={multiCandidate && i !== chosenIndex}
+              />
+            ))}
+            <span className="self-center text-base text-paper-dim">+</span>
+            <Die
+              value={result.raw.units}
+              variant="units"
+              spinKey={spinKey}
+              size="md"
+              kind={t.quickRoll.unitsLabel}
+            />
+          </div>
+        )}
 
-      {result && style && (
-        <div
-          className={`relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl px-6 py-8 transition-colors duration-300 ${revealed ? style.classes : 'bg-zinc-900 text-zinc-100'} ${
-            isFumble ? 'result-fumble' : ''
-          } ${isCritical ? 'result-critical' : ''}`}
-        >
-          <Die value={result.roll} sides={100} spinKey={spinKey} size="lg" />
-          <span
-            className={`text-lg font-semibold uppercase tracking-wide transition-opacity duration-200 ${revealed ? 'opacity-100' : 'opacity-0'}`}
+        {result && style && (
+          <div
+            className={`text-center transition-all duration-300 ${
+              revealed ? 'opacity-100' : 'translate-y-2 opacity-0'
+            }`}
           >
-            {style.label}
-          </span>
-          {revealed && result.candidates.length > 1 && (
-            <span className="text-xs opacity-80">
-              {t.quickRoll.candidates(result.candidates.join(', '))}
-            </span>
-          )}
-        </div>
-      )}
+            <div
+              className={`font-display text-7xl leading-none ${style.textClass} ${
+                isFumble ? 'result-fracture' : ''
+              } ${result.level === 'hard' ? 'opacity-80' : ''}`}
+            >
+              {result.roll}
+            </div>
+            <div
+              className={`relative mt-2.5 inline-block text-[11px] font-semibold uppercase tracking-[.22em] ${style.textClass} ${
+                isCritical ? 'result-critical-flourish' : ''
+              } ${isFumble ? 'tracking-[.4em]' : ''}`}
+            >
+              {style.label}
+            </div>
+            {multiCandidate && (
+              <div className="mt-1.5 text-[10px] tracking-wider text-paper-dim">
+                {t.quickRoll.candidates(result.candidates.join(' · '))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <ThresholdTrack
+        regular={thresholds.regular}
+        hard={thresholds.hard}
+        extreme={thresholds.extreme}
+        roll={revealed ? result?.roll : undefined}
+        fumble={isFumble}
+      />
 
       <button
         type="button"
         onClick={roll}
-        className="w-full rounded-2xl bg-violet-500 py-5 text-xl font-bold text-white shadow-lg shadow-violet-950/50 transition-transform active:scale-[0.98] active:bg-violet-600"
+        className="mt-2 w-full border border-brass py-[19px] text-xs font-semibold uppercase tracking-[.28em] text-brass transition-colors hover:bg-brass hover:text-ink"
       >
         {t.quickRoll.roll}
       </button>

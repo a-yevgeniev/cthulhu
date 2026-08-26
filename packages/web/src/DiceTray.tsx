@@ -49,22 +49,24 @@ export default function DiceTray() {
   const notationInvalid = notation.trim() !== '' && !isValidNotation(notation);
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
-      <div className="grid grid-cols-4 gap-3">
+    <div className="mx-auto flex max-w-md flex-col gap-7 px-4 py-6">
+      <div className="grid grid-cols-4 gap-2.5">
         {QUICK_DICE.map((sides) => (
           <button
             key={sides}
             type="button"
             onClick={() => rollQuick(sides)}
-            className="rounded-xl border border-zinc-700 bg-zinc-900 py-4 text-lg font-semibold text-zinc-100 transition-transform active:scale-95 active:bg-zinc-800"
+            className="border border-ink-line py-3.5 text-sm text-paper transition-colors hover:border-brass hover:text-brass"
           >
             d{sides}
           </button>
         ))}
       </div>
 
-      <label className="flex flex-col gap-2">
-        <span className="text-sm text-zinc-400">{t.diceTray.notation}</span>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[10px] uppercase tracking-widest text-paper-dim">
+          {t.diceTray.notation}
+        </span>
         <div className="flex gap-2">
           <input
             type="text"
@@ -72,30 +74,32 @@ export default function DiceTray() {
             onChange={(e) => setNotation(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && rollFreeText()}
             placeholder={t.diceTray.notationPlaceholder}
-            className={`flex-1 rounded-xl border bg-zinc-900 px-4 py-3 text-zinc-50 placeholder:text-zinc-600 focus:outline-none ${
-              notationInvalid ? 'border-red-500' : 'border-zinc-700 focus:border-violet-400'
+            className={`flex-1 border bg-transparent px-3 py-2.5 text-paper placeholder:text-paper-dim/60 focus:outline-none ${
+              notationInvalid ? 'border-oxblood' : 'border-ink-line focus:border-brass'
             }`}
           />
           <button
             type="button"
             onClick={rollFreeText}
             disabled={notation.trim() === '' || notationInvalid}
-            className="rounded-xl bg-violet-500 px-5 font-semibold text-white disabled:opacity-40 active:bg-violet-600"
+            className="border border-brass px-5 text-xs font-semibold uppercase tracking-widest text-brass transition-colors hover:bg-brass hover:text-ink disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-brass"
           >
             {t.diceTray.roll}
           </button>
         </div>
-        {notationInvalid && <span className="text-xs text-red-400">{t.diceTray.cantParse}</span>}
+        {notationInvalid && <span className="text-xs text-oxblood">{t.diceTray.cantParse}</span>}
       </label>
 
-      {error && !notationInvalid && <p className="text-center text-sm text-red-400">{error}</p>}
+      {error && !notationInvalid && <p className="text-center text-sm text-oxblood">{error}</p>}
 
       {result && (
-        <div className="flex flex-col gap-4 rounded-2xl border border-zinc-700 bg-zinc-900 px-6 py-6">
+        <div className="flex flex-col gap-4 border-t border-ink-line pt-5">
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-zinc-400">{result.notation}</span>
+            <span className="text-sm text-paper-dim">{result.notation}</span>
             <span
-              className={`text-5xl font-black tabular-nums text-zinc-50 transition-opacity duration-200 ${revealed ? 'opacity-100' : 'opacity-0'}`}
+              className={`font-display text-5xl leading-none text-paper transition-opacity duration-200 ${
+                revealed ? 'opacity-100' : 'opacity-0'
+              }`}
             >
               {result.total}
             </span>

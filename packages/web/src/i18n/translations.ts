@@ -27,11 +27,14 @@ export interface Translations {
   quickRoll: {
     title: string;
     skillValue: string;
+    dice: string;
     noModifierDice: string;
     bonusDice: (n: number) => string;
     penaltyDice: (n: number) => string;
     fewerBonusMorePenalty: string;
     moreBonusFewerPenalty: string;
+    tensLabel: string;
+    unitsLabel: string;
     thresholds: (regular: number, hard: number, extreme: number) => string;
     candidates: (list: string) => string;
     roll: string;
@@ -237,12 +240,15 @@ export const en: Translations = {
   },
   quickRoll: {
     title: 'Quick Roll',
-    skillValue: 'Skill value',
-    noModifierDice: 'No modifier dice',
-    bonusDice: (n) => `${n} bonus ${n === 1 ? 'die' : 'dice'}`,
-    penaltyDice: (n) => `${n} penalty ${n === 1 ? 'die' : 'dice'}`,
+    skillValue: 'Skill',
+    dice: 'Dice',
+    noModifierDice: 'Plain',
+    bonusDice: (n) => `+${n} bonus`,
+    penaltyDice: (n) => `${n} penalty`,
     fewerBonusMorePenalty: 'Fewer bonus dice / more penalty dice',
     moreBonusFewerPenalty: 'More bonus dice / fewer penalty dice',
+    tensLabel: 'tens',
+    unitsLabel: 'units',
     thresholds: (r, h, e) => `Regular ${r} · Hard ${h} · Extreme ${e}`,
     candidates: (list) => `candidates: ${list}`,
     roll: 'Roll',
@@ -348,12 +354,15 @@ export const uk: Translations = {
   },
   quickRoll: {
     title: 'Швидкий кидок',
-    skillValue: 'Значення навички',
-    noModifierDice: 'Без модифікаторних кубиків',
-    bonusDice: (n) => `${n} ${n === 1 ? 'бонусний кубик' : 'бонусні кубики'}`,
-    penaltyDice: (n) => `${n} ${n === 1 ? 'штрафний кубик' : 'штрафні кубики'}`,
+    skillValue: 'Навичка',
+    dice: 'Кубики',
+    noModifierDice: 'Звичайно',
+    bonusDice: (n) => `+${n} бонус`,
+    penaltyDice: (n) => `${n} штраф`,
     fewerBonusMorePenalty: 'Менше бонусних кубиків / більше штрафних',
     moreBonusFewerPenalty: 'Більше бонусних кубиків / менше штрафних',
+    tensLabel: 'десятки',
+    unitsLabel: 'одиниці',
     thresholds: (r, h, e) => `Звичайна ${r} · Складна ${h} · Екстремальна ${e}`,
     candidates: (list) => `варіанти: ${list}`,
     roll: 'Кинути',

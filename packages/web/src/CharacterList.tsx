@@ -37,14 +37,14 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
         <button
           type="button"
           onClick={handleNew}
-          className="flex-1 rounded-xl bg-violet-500 py-3 font-semibold text-white shadow-lg shadow-violet-950/40 transition-transform active:scale-[0.98] active:bg-violet-600"
+          className="flex-1 border border-brass py-3 text-xs font-semibold uppercase tracking-widest text-brass transition-colors hover:bg-brass hover:text-ink"
         >
           {t.characters.new}
         </button>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-xl border border-zinc-700 px-4 py-3 text-sm text-zinc-200 active:bg-zinc-800"
+          className="border border-ink-line px-4 py-3 text-xs uppercase tracking-widest text-paper-dim transition-colors hover:border-brass hover:text-paper"
         >
           {t.characters.import}
         </button>
@@ -56,37 +56,37 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
           onChange={handleFileChange}
         />
       </div>
-      {importError && <p className="text-sm text-red-400">{importError}</p>}
+      {importError && <p className="text-sm text-oxblood">{importError}</p>}
 
       {characters.length === 0 && (
-        <p className="pt-12 text-center text-sm text-zinc-500">{t.characters.empty}</p>
+        <p className="pt-12 text-center text-sm text-paper-dim">{t.characters.empty}</p>
       )}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col">
         {characters.map((c) => (
           <div
             key={c.id}
-            className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3"
+            className="flex items-center gap-2 border-b border-ink-line/60 py-3"
           >
             <button type="button" onClick={() => onOpen(c.id)} className="flex-1 text-left">
-              <span className="block font-semibold text-zinc-100">
+              <span className="block font-display text-lg text-paper">
                 {c.name.trim() || t.characters.unnamed}
               </span>
-              <span className="block text-xs text-zinc-500">
+              <span className="block text-xs text-paper-dim">
                 {c.occupation || t.characters.noOccupation}
               </span>
             </button>
             <button
               type="button"
               onClick={() => exportCharacter(c)}
-              className="shrink-0 text-xs text-zinc-500 underline active:text-zinc-300"
+              className="shrink-0 text-[11px] uppercase tracking-wider text-paper-dim transition-colors hover:text-brass"
             >
               {t.characters.export}
             </button>
             <button
               type="button"
               onClick={() => deleteCharacter(c.id)}
-              className="shrink-0 text-xs text-red-400 underline active:text-red-300"
+              className="shrink-0 text-[11px] uppercase tracking-wider text-oxblood/80 transition-colors hover:text-oxblood"
             >
               {t.characters.delete}
             </button>

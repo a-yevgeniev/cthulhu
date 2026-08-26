@@ -19,6 +19,10 @@ import Die from './Die';
 
 const CHAR_KEYS: (keyof Characteristics)[] = ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU'];
 
+const LABEL = 'text-[10px] uppercase tracking-widest text-paper-dim';
+const FIELD = 'border border-ink-line bg-transparent text-paper placeholder:text-paper-dim/60 focus:border-brass focus:outline-none';
+const GHOST_BTN = 'border border-ink-line text-paper-dim transition-colors hover:border-brass hover:text-paper';
+
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -35,24 +39,24 @@ function ResourceTracker({
   onChange: (next: number) => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-zinc-700 bg-zinc-900 px-2 py-3">
-      <span className="text-xs text-zinc-500">{label}</span>
+    <div className="flex flex-col items-center gap-1.5 border border-ink-line px-2 py-3">
+      <span className={LABEL}>{label}</span>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => onChange(clamp(current - 1, 0, max ?? Infinity))}
-          className="grid h-7 w-7 place-items-center rounded-full bg-zinc-800 text-zinc-100 active:bg-zinc-700"
+          className={`grid h-7 w-7 place-items-center ${GHOST_BTN}`}
         >
           −
         </button>
-        <span className="w-12 text-center text-lg font-bold tabular-nums text-zinc-50">
+        <span className="w-12 text-center font-display text-lg tabular-nums text-paper">
           {current}
-          {max !== undefined && <span className="text-xs text-zinc-500">/{max}</span>}
+          {max !== undefined && <span className="text-xs text-paper-dim">/{max}</span>}
         </span>
         <button
           type="button"
           onClick={() => onChange(clamp(current + 1, 0, max ?? Infinity))}
-          className="grid h-7 w-7 place-items-center rounded-full bg-zinc-800 text-zinc-100 active:bg-zinc-700"
+          className={`grid h-7 w-7 place-items-center ${GHOST_BTN}`}
         >
           +
         </button>
@@ -64,9 +68,11 @@ function ResourceTracker({
 function RollBadge({ result, t, spinKey }: { result: SkillRollResult; t: Translations; spinKey: number }) {
   const style = rollDisplay(result, t);
   return (
-    <span className={`flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2 text-xs font-semibold ${style.classes}`}>
+    <span className="flex items-center gap-2">
       <Die value={result.roll} sides={100} spinKey={spinKey} size="sm" />
-      {style.label}
+      <span className={`text-[10px] font-semibold uppercase tracking-wider ${style.textClass}`}>
+        {style.label}
+      </span>
     </span>
   );
 }
@@ -88,9 +94,9 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
 
   if (!investigator) {
     return (
-      <div className="mx-auto max-w-md px-4 py-8 text-center text-zinc-400">
+      <div className="mx-auto max-w-md px-4 py-8 text-center text-paper-dim">
         <p>{t.sheet.notFound}</p>
-        <button type="button" onClick={onBack} className="mt-4 text-violet-300 underline">
+        <button type="button" onClick={onBack} className="mt-4 text-brass">
           {t.sheet.back}
         </button>
       </div>
@@ -157,7 +163,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <div className="flex items-center justify-between">
-        <button type="button" onClick={onBack} className="text-sm text-violet-300 underline">
+        <button type="button" onClick={onBack} className="text-sm text-brass">
           {t.sheet.back}
         </button>
         <button
@@ -166,7 +172,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             deleteCharacter(id);
             onBack();
           }}
-          className="text-xs text-red-400 underline active:text-red-300"
+          className="text-[11px] uppercase tracking-wider text-oxblood/80 transition-colors hover:text-oxblood"
         >
           {t.sheet.delete}
         </button>
@@ -178,7 +184,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
           value={investigator.name}
           onChange={(e) => patch((c) => ({ ...c, name: e.target.value }))}
           placeholder={t.sheet.namePlaceholder}
-          className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-xl font-bold text-zinc-50 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
+          className={`${FIELD} px-4 py-3 font-display text-xl`}
         />
         <div className="flex gap-2">
           <input
@@ -186,24 +192,24 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             value={investigator.occupation}
             onChange={(e) => patch((c) => ({ ...c, occupation: e.target.value }))}
             placeholder={t.sheet.occupationPlaceholder}
-            className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
+            className={`${FIELD} flex-1 px-4 py-2 text-sm`}
           />
           <input
             type="number"
             value={investigator.age}
             onChange={(e) => patch((c) => ({ ...c, age: Number(e.target.value) }))}
             placeholder={t.sheet.agePlaceholder}
-            className="w-20 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-center text-sm text-zinc-100 focus:border-violet-400 focus:outline-none"
+            className={`${FIELD} w-20 px-3 py-2 text-center text-sm`}
           />
         </div>
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.characteristics}</h2>
+        <h2 className={`mb-2 ${LABEL}`}>{t.sheet.characteristics}</h2>
         <div className="grid grid-cols-4 gap-2">
           {CHAR_KEYS.map((key) => (
             <label key={key} className="flex flex-col items-center gap-1">
-              <span className="text-xs text-zinc-500">{key}</span>
+              <span className={LABEL}>{key}</span>
               <input
                 type="number"
                 value={investigator.characteristics[key]}
@@ -213,7 +219,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                     characteristics: { ...c.characteristics, [key]: Number(e.target.value) },
                   }))
                 }
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-1 py-2 text-center text-lg font-semibold text-zinc-50 focus:border-violet-400 focus:outline-none"
+                className={`${FIELD} w-full px-1 py-2 text-center font-display text-lg`}
               />
             </label>
           ))}
@@ -221,13 +227,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.derivedHeading}</h2>
-        <p className="text-center text-xs text-zinc-500">
+        <h2 className={`mb-2 ${LABEL}`}>{t.sheet.derivedHeading}</h2>
+        <p className="text-center text-xs text-paper-dim">
           {t.sheet.derived(derived.build, derived.damageBonus, derived.move)}
         </p>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <ResourceTracker
           label={t.sheet.hp}
           current={investigator.currentHp}
@@ -253,40 +259,40 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
         />
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3">
-        <h2 className="text-sm font-semibold text-zinc-400">{t.sheet.sanityCheck}</h2>
+      <div className="flex flex-col gap-2 border border-ink-line px-4 py-3">
+        <h2 className={LABEL}>{t.sheet.sanityCheck}</h2>
         <div className="flex gap-2">
           <input
             type="text"
             value={sanLoss}
             onChange={(e) => setSanLoss(e.target.value)}
             placeholder={t.sheet.sanLossPlaceholder}
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-violet-400 focus:outline-none"
+            className={`${FIELD} flex-1 px-3 py-2 text-sm`}
           />
           <button
             type="button"
             onClick={runSanityCheck}
-            className="rounded-lg bg-violet-500 px-4 text-sm font-semibold text-white active:bg-violet-600"
+            className="border border-brass px-4 text-xs font-semibold uppercase tracking-widest text-brass transition-colors hover:bg-brass hover:text-ink"
           >
             {t.sheet.check}
           </button>
         </div>
-        {sanError && <span className="text-xs text-red-400">{sanError}</span>}
-        <div className="flex items-center justify-between text-xs text-zinc-500">
+        {sanError && <span className="text-xs text-oxblood">{sanError}</span>}
+        <div className="flex items-center justify-between text-[11px] text-paper-dim">
           <span>{t.sheet.startingSan(investigator.startingSan)}</span>
           <span>{t.sheet.lostThisSession(investigator.sanLostThisSession)}</span>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => patch((c) => ({ ...c, startingSan: c.currentSan }))}
-              className="underline active:text-zinc-300"
+              className="transition-colors hover:text-brass"
             >
               {t.sheet.setStartingToCurrent}
             </button>
             <button
               type="button"
               onClick={() => patch((c) => ({ ...c, sanLostThisSession: 0 }))}
-              className="underline active:text-zinc-300"
+              className="transition-colors hover:text-brass"
             >
               {t.sheet.resetSession}
             </button>
@@ -295,10 +301,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.skills}</h2>
-        <div className="flex flex-col gap-1">
+        <h2 className={`mb-2 ${LABEL}`}>{t.sheet.skills}</h2>
+        <div className="flex flex-col">
           {investigator.skills.map((skill) => (
-            <div key={skill.id} className="flex items-center gap-2 rounded-lg bg-zinc-900 px-3 py-2">
+            <div
+              key={skill.id}
+              className="flex items-center gap-2 border-b border-ink-line/60 py-2"
+            >
               <input
                 type="checkbox"
                 checked={skill.checked}
@@ -310,9 +319,9 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                     ),
                   }))
                 }
-                className="h-4 w-4"
+                className="h-4 w-4 accent-brass"
               />
-              <span className="flex-1 truncate text-sm text-zinc-200">{skill.name}</span>
+              <span className="flex-1 truncate text-sm text-paper">{skill.name}</span>
               <input
                 type="number"
                 value={skill.value}
@@ -324,12 +333,12 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                     ),
                   }))
                 }
-                className="w-14 rounded-md border border-zinc-700 bg-zinc-950 px-1 py-1 text-center text-sm text-zinc-100 focus:border-violet-400 focus:outline-none"
+                className={`${FIELD} w-14 px-1 py-1 text-center text-sm`}
               />
               <button
                 type="button"
                 onClick={() => rollSkill(skill)}
-                className="rounded-md border border-zinc-700 px-2 py-1 text-xs font-medium text-zinc-200 active:bg-zinc-800"
+                className={`px-2 py-1 text-[11px] uppercase tracking-wider ${GHOST_BTN}`}
               >
                 {t.sheet.roll}
               </button>
@@ -341,7 +350,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                 onClick={() =>
                   patch((c) => ({ ...c, skills: c.skills.filter((s) => s.id !== skill.id) }))
                 }
-                className="text-zinc-600 active:text-red-400"
+                className="text-paper-dim transition-colors hover:text-oxblood"
                 aria-label={t.sheet.removeSkill(skill.name)}
               >
                 ×
@@ -349,13 +358,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             </div>
           ))}
         </div>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <input
             type="text"
             value={newSkillName}
             onChange={(e) => setNewSkillName(e.target.value)}
             placeholder={t.sheet.newSkillPlaceholder}
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
+            className={`${FIELD} flex-1 px-3 py-2 text-sm`}
           />
           <button
             type="button"
@@ -368,7 +377,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
               }));
               setNewSkillName('');
             }}
-            className="rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200 active:bg-zinc-800"
+            className={`px-3 text-xs uppercase tracking-wider ${GHOST_BTN}`}
           >
             {t.sheet.add}
           </button>
@@ -376,10 +385,10 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.weapons}</h2>
-        <div className="flex flex-col gap-2">
+        <h2 className={`mb-2 ${LABEL}`}>{t.sheet.weapons}</h2>
+        <div className="flex flex-col gap-3">
           {investigator.weapons.map((weapon) => (
-            <div key={weapon.id} className="flex flex-col gap-2 rounded-lg bg-zinc-900 px-3 py-2">
+            <div key={weapon.id} className="flex flex-col gap-2 border border-ink-line px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -393,14 +402,14 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                     }))
                   }
                   placeholder={t.sheet.weaponNamePlaceholder}
-                  className="flex-1 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
+                  className={`${FIELD} flex-1 px-2 py-1 text-sm`}
                 />
                 <button
                   type="button"
                   onClick={() =>
                     patch((c) => ({ ...c, weapons: c.weapons.filter((w) => w.id !== weapon.id) }))
                   }
-                  className="text-zinc-600 active:text-red-400"
+                  className="text-paper-dim transition-colors hover:text-oxblood"
                   aria-label={t.sheet.removeWeapon(weapon.name)}
                 >
                   ×
@@ -419,7 +428,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                     }))
                   }
                   placeholder={t.sheet.weaponSkillPlaceholder}
-                  className="flex-1 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
+                  className={`${FIELD} flex-1 px-2 py-1 text-xs`}
                 />
                 <input
                   type="text"
@@ -433,21 +442,21 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                     }))
                   }
                   placeholder={t.sheet.weaponDamagePlaceholder}
-                  className="w-28 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
+                  className={`${FIELD} w-28 px-2 py-1 text-xs`}
                 />
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => rollWeaponAttack(weapon)}
-                  className="rounded-md border border-zinc-700 px-2 py-1 text-xs font-medium text-zinc-200 active:bg-zinc-800"
+                  className={`px-2 py-1 text-[11px] uppercase tracking-wider ${GHOST_BTN}`}
                 >
                   {t.sheet.attack}
                 </button>
                 <button
                   type="button"
                   onClick={() => rollWeaponDamage(weapon)}
-                  className="rounded-md border border-zinc-700 px-2 py-1 text-xs font-medium text-zinc-200 active:bg-zinc-800"
+                  className={`px-2 py-1 text-[11px] uppercase tracking-wider ${GHOST_BTN}`}
                 >
                   {t.sheet.damage}
                 </button>
@@ -459,21 +468,24 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                       spinKey={spinKeys[weapon.id] ?? 0}
                     />
                   ) : (
-                    <span className="rounded-full bg-zinc-800 py-0.5 pl-2 pr-3 text-sm font-semibold tabular-nums text-zinc-100">
-                      {(weaponResults[weapon.id] as DiceRollResult).total} {t.sheet.dmg}
+                    <span className="font-display text-lg tabular-nums text-paper">
+                      {(weaponResults[weapon.id] as DiceRollResult).total}
+                      <span className="ml-1 text-[10px] uppercase tracking-wider text-paper-dim">
+                        {t.sheet.dmg}
+                      </span>
                     </span>
                   ))}
               </div>
             </div>
           ))}
         </div>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <input
             type="text"
             value={newWeaponName}
             onChange={(e) => setNewWeaponName(e.target.value)}
             placeholder={t.sheet.newWeaponPlaceholder}
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
+            className={`${FIELD} flex-1 px-3 py-2 text-sm`}
           />
           <button
             type="button"
@@ -486,7 +498,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
               }));
               setNewWeaponName('');
             }}
-            className="rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200 active:bg-zinc-800"
+            className={`px-3 text-xs uppercase tracking-wider ${GHOST_BTN}`}
           >
             {t.sheet.add}
           </button>
@@ -494,12 +506,12 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.inventory}</h2>
+        <h2 className={`mb-2 ${LABEL}`}>{t.sheet.inventory}</h2>
         <div className="flex flex-wrap gap-2">
           {investigator.inventory.map((item, i) => (
             <span
               key={i}
-              className="flex items-center gap-1 rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200"
+              className="flex items-center gap-1.5 border border-ink-line px-3 py-1 text-xs text-paper"
             >
               {item}
               <button
@@ -507,7 +519,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                 onClick={() =>
                   patch((c) => ({ ...c, inventory: c.inventory.filter((_, j) => j !== i) }))
                 }
-                className="text-zinc-500 active:text-red-400"
+                className="text-paper-dim transition-colors hover:text-oxblood"
                 aria-label={t.sheet.removeItem(item)}
               >
                 ×
@@ -515,13 +527,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
             </span>
           ))}
         </div>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <input
             type="text"
             value={inventoryItem}
             onChange={(e) => setInventoryItem(e.target.value)}
             placeholder={t.sheet.addItemPlaceholder}
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-400 focus:outline-none"
+            className={`${FIELD} flex-1 px-3 py-2 text-sm`}
           />
           <button
             type="button"
@@ -531,7 +543,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
               patch((c) => ({ ...c, inventory: [...c.inventory, item] }));
               setInventoryItem('');
             }}
-            className="rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200 active:bg-zinc-800"
+            className={`px-3 text-xs uppercase tracking-wider ${GHOST_BTN}`}
           >
             {t.sheet.add}
           </button>
@@ -539,12 +551,12 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">{t.sheet.notes}</h2>
+        <h2 className={`mb-2 ${LABEL}`}>{t.sheet.notes}</h2>
         <textarea
           value={investigator.notes}
           onChange={(e) => patch((c) => ({ ...c, notes: e.target.value }))}
           rows={4}
-          className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 focus:border-violet-400 focus:outline-none"
+          className={`${FIELD} w-full resize-none px-4 py-3 text-sm`}
         />
       </div>
     </div>

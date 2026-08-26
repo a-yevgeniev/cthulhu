@@ -44,7 +44,7 @@ function AppShell() {
       <div className="flex-1 pb-24">
         <Active />
       </div>
-      <nav className="fixed inset-x-0 bottom-0 flex border-t border-zinc-800/80 bg-zinc-950/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+      <nav className="fixed inset-x-0 bottom-0 flex border-t border-ink-line/80 bg-ink/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
         {TAB_IDS.map((id) => {
           const Icon = TAB_ICONS[id];
           const active = tabId === id;
@@ -53,13 +53,13 @@ function AppShell() {
               key={id}
               type="button"
               onClick={() => setTabId(id)}
-              className="relative flex flex-1 flex-col items-center gap-1 py-3 text-[11px] font-medium transition-colors"
+              className="relative flex flex-1 flex-col items-center gap-1 py-3 text-[10px] uppercase tracking-wider transition-colors"
             >
               <span
-                className={`absolute -top-px h-0.5 w-8 rounded-full transition-colors ${active ? 'bg-violet-400' : 'bg-transparent'}`}
+                className={`absolute -top-px h-0.5 w-8 transition-colors ${active ? 'bg-brass' : 'bg-transparent'}`}
               />
-              <Icon className={`h-5 w-5 ${active ? 'text-violet-300' : 'text-zinc-500'}`} />
-              <span className={active ? 'text-violet-300' : 'text-zinc-500'}>{tabLabels[id]}</span>
+              <Icon className={`h-5 w-5 ${active ? 'text-brass' : 'text-paper-dim'}`} />
+              <span className={active ? 'text-brass' : 'text-paper-dim'}>{tabLabels[id]}</span>
             </button>
           );
         })}

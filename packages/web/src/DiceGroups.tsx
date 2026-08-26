@@ -6,8 +6,8 @@ export default function DiceGroups({ groups, spinKey }: { groups: DiceGroup[]; s
     <>
       {groups.map((group, i) => (
         <div key={i} className="flex flex-col gap-2">
-          <span className="text-xs text-zinc-500">{group.spec}</span>
-          <div className="flex flex-wrap gap-2">
+          <span className="text-[10px] uppercase tracking-widest text-paper-dim">{group.spec}</span>
+          <div className="flex flex-wrap gap-3">
             {group.rolls.map((value, j) => (
               <Die
                 key={j}
@@ -15,7 +15,7 @@ export default function DiceGroups({ groups, spinKey }: { groups: DiceGroup[]; s
                 sides={group.sides}
                 spinKey={spinKey}
                 size="sm"
-                dimmed={group.dropped.includes(j)}
+                discarded={group.dropped.includes(j)}
               />
             ))}
           </div>

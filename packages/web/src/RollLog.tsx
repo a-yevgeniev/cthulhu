@@ -29,8 +29,8 @@ function SkillEntryCard({ entry, t }: { entry: SkillLogEntry; t: Translations })
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4">
-      <div className="flex items-center justify-between text-xs text-zinc-500">
+    <div className="log-row-in flex flex-col gap-2 border-b border-ink-line/60 py-3">
+      <div className="flex items-center justify-between text-[11px] text-paper-dim">
         <span>{formatTime(entry.timestamp)}</span>
         <span>
           {t.rollLog.skillLine(result.skill, t.difficulty[result.difficulty])}
@@ -40,11 +40,9 @@ function SkillEntryCard({ entry, t }: { entry: SkillLogEntry; t: Translations })
         </span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <span className="text-3xl font-black tabular-nums text-zinc-50">{result.roll}</span>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${style.classes}`}
-        >
+      <div className="flex items-baseline gap-3">
+        <span className={`font-display text-3xl tabular-nums ${style.textClass}`}>{result.roll}</span>
+        <span className={`text-[10px] font-semibold uppercase tracking-[.12em] ${style.textClass}`}>
           {style.label}
         </span>
       </div>
@@ -54,7 +52,7 @@ function SkillEntryCard({ entry, t }: { entry: SkillLogEntry; t: Translations })
           <button
             type="button"
             onClick={() => pushEntry(entry.id)}
-            className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 active:bg-zinc-800"
+            className="border border-ink-line px-3 py-1.5 text-[11px] uppercase tracking-wider text-paper-dim transition-colors hover:border-brass hover:text-brass"
           >
             {t.rollLog.push}
           </button>
@@ -68,31 +66,31 @@ function SkillEntryCard({ entry, t }: { entry: SkillLogEntry; t: Translations })
               setLuckPoints(e.target.value);
               setLuckError(null);
             }}
-            className="w-16 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-center text-xs text-zinc-100 focus:border-violet-400 focus:outline-none"
+            className="w-16 border border-ink-line bg-transparent px-2 py-1.5 text-center text-xs text-paper focus:border-brass focus:outline-none"
           />
           <button
             type="button"
             onClick={spendLuck}
-            className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 active:bg-zinc-800"
+            className="border border-ink-line px-3 py-1.5 text-[11px] uppercase tracking-wider text-paper-dim transition-colors hover:border-brass hover:text-brass"
           >
             {t.rollLog.spendLuck}
           </button>
         </div>
       )}
-      {luckError && <span className="text-xs text-red-400">{luckError}</span>}
+      {luckError && <span className="text-xs text-oxblood">{luckError}</span>}
     </div>
   );
 }
 
 function NotationEntryCard({ entry }: { entry: Extract<LogEntry, { kind: 'notation' }> }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4">
-      <div className="flex items-center justify-between text-xs text-zinc-500">
+    <div className="log-row-in flex flex-col gap-2 border-b border-ink-line/60 py-3">
+      <div className="flex items-center justify-between text-[11px] text-paper-dim">
         <span>{formatTime(entry.timestamp)}</span>
         <span>{entry.result.notation}</span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-3xl font-black tabular-nums text-zinc-50">{entry.result.total}</span>
+        <span className="font-display text-3xl tabular-nums text-paper">{entry.result.total}</span>
       </div>
       <DiceGroups groups={entry.result.groups} spinKey={0} />
     </div>
@@ -104,13 +102,13 @@ export default function RollLog() {
   const { entries, clear } = useRollLog();
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-6">
+    <div className="mx-auto flex max-w-md flex-col gap-2 px-4 py-6">
       {entries.length > 0 && (
-        <div className="flex justify-end">
+        <div className="flex justify-end pb-2">
           <button
             type="button"
             onClick={clear}
-            className="text-xs text-zinc-500 underline active:text-zinc-300"
+            className="text-[11px] uppercase tracking-wider text-paper-dim transition-colors hover:text-brass"
           >
             {t.rollLog.clear}
           </button>
@@ -118,10 +116,10 @@ export default function RollLog() {
       )}
 
       {entries.length === 0 && (
-        <p className="pt-12 text-center text-sm text-zinc-500">{t.rollLog.empty}</p>
+        <p className="pt-12 text-center text-sm text-paper-dim">{t.rollLog.empty}</p>
       )}
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col">
         {entries.map((entry) =>
           entry.kind === 'skill' ? (
             <SkillEntryCard key={entry.id} entry={entry} t={t} />

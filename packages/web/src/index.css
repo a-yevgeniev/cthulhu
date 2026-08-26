@@ -1,9 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Cinzel', Georgia, serif;
+  --font-sans: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: 'Bodoni Moda', 'Bodoni 72', Didot, Georgia, serif;
+
+  --color-ink: #0e1417;
+  --color-ink-raised: #161e22;
+  --color-ink-line: #242f34;
+  --color-paper: #d8cfbe;
+  --color-paper-dim: #7c8b88;
+  --color-brass: #b08d4f;
+  --color-verdigris: #4e8a7b;
+  --color-oxblood: #8c2f26;
 }
 
 html {
@@ -13,90 +22,186 @@ html {
 body {
   margin: 0;
   min-height: 100svh;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139, 92, 246, 0.16), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(16, 185, 129, 0.08), transparent),
-    #08080b;
-  color: #e5e4e7;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A single lamp overhead, echoing the prototype's mood. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 55% at 50% 8%, rgba(176, 141, 79, 0.1), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- dice ---------- */
+
+.die {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.3, 1),
+    filter 0.35s;
+}
+
+.die-face {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, #26333a, #141c20);
+  clip-path: polygon(50% 0%, 100% 37%, 79% 100%, 21% 100%, 0% 37%);
+  border: 0;
+}
+
+.die-face::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  clip-path: polygon(50% 0%, 100% 37%, 79% 100%, 21% 100%, 0% 37%);
+  background: linear-gradient(160deg, rgba(216, 207, 190, 0.09), transparent 55%);
+}
+
+.die-digit {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-paper);
+  z-index: 1;
+}
+
+.die-kind {
+  position: absolute;
+  bottom: -16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--color-paper-dim);
+  text-transform: uppercase;
+}
+
+.die.kept .die-face {
+  background: linear-gradient(160deg, #33424a, #1a242a);
+}
+.die.kept .die-digit {
+  color: var(--color-brass);
+}
+.die.discarded {
+  opacity: 0.22;
+  transform: scale(0.76) translateY(6px);
+  filter: saturate(0);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes die-tumble {
+  .die.tumbling {
+    animation: tumble 0.18s steps(2) infinite;
+  }
+  @keyframes tumble {
     0% {
-      transform: rotate(0deg) scale(1);
-    }
-    25% {
-      transform: rotate(-18deg) scale(1.08);
+      transform: translateY(0) rotate(-7deg) scale(1.02);
     }
     50% {
-      transform: rotate(12deg) scale(0.92);
-    }
-    75% {
-      transform: rotate(-10deg) scale(1.06);
+      transform: translateY(-7px) rotate(9deg) scale(0.97);
     }
     100% {
-      transform: rotate(0deg) scale(1);
+      transform: translateY(0) rotate(-4deg) scale(1.02);
     }
   }
 
-  @keyframes die-land {
+  .die.settled {
+    animation: settle 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
+  }
+  @keyframes settle {
     0% {
-      transform: scale(1.35) rotate(0deg);
-    }
-    55% {
-      transform: scale(0.9) rotate(-4deg);
+      transform: scale(1.16);
     }
     100% {
-      transform: scale(1) rotate(0deg);
+      transform: scale(1);
     }
   }
 
-  @keyframes fumble-shake {
-    0%,
+  /* fumble: the frame itself fails, not just a colour swap */
+  .result-fracture {
+    animation: fracture 0.5s cubic-bezier(0.3, 0, 0.2, 1);
+  }
+  @keyframes fracture {
+    0% {
+      transform: translateX(0);
+    }
+    18% {
+      transform: translateX(-7px) skewX(4deg);
+    }
+    34% {
+      transform: translateX(6px) skewX(-3deg);
+    }
+    52% {
+      transform: translateX(-3px);
+    }
     100% {
       transform: translateX(0);
     }
-    20% {
-      transform: translateX(-6px) rotate(-1deg);
-    }
-    40% {
-      transform: translateX(5px) rotate(1deg);
-    }
-    60% {
-      transform: translateX(-4px) rotate(-0.5deg);
-    }
-    80% {
-      transform: translateX(3px) rotate(0.5deg);
-    }
   }
 
-  @keyframes critical-glow {
-    0% {
-      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.6);
+  .log-row-in {
+    animation: logIn 0.3s ease;
+  }
+  @keyframes logIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
     }
-    100% {
-      box-shadow: 0 0 0 18px rgba(251, 191, 36, 0);
+    to {
+      opacity: 1;
+      transform: none;
     }
   }
+}
 
-  .die-rolling {
-    animation: die-tumble 0.35s ease-in-out infinite;
-  }
+.result-critical-flourish::before,
+.result-critical-flourish::after {
+  content: '—';
+  opacity: 0.5;
+  margin: 0 8px;
+}
 
-  .die-landing {
-    animation: die-land 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
+/* ---------- threshold track ---------- */
 
-  .result-fumble {
-    animation: fumble-shake 0.45s ease-in-out;
-  }
+.track {
+  position: relative;
+  height: 5px;
+  display: flex;
+  background: var(--color-ink-raised);
+  overflow: visible;
+}
 
-  .result-critical::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    animation: critical-glow 0.7s ease-out;
-    pointer-events: none;
-  }
+.track-marker {
+  position: absolute;
+  top: -7px;
+  width: 1px;
+  height: 19px;
+  background: var(--color-paper);
+  transition: left 0.45s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+.track-marker::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -2.5px;
+  width: 6px;
+  height: 6px;
+  background: var(--color-paper);
+  transform: rotate(45deg);
+}
+.track-marker.fumble {
+  background: var(--color-oxblood);
+}
+.track-marker.fumble::after {
+  background: var(--color-oxblood);
 }

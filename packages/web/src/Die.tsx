@@ -5,33 +5,62 @@ const REDUCED_MOTION = typeof window !== 'undefined' ? window.matchMedia('(prefe
 // CLAUDE.md: "Keep animation under ~600ms with skip-on-tap, or it becomes unbearable by
 // session three." Skip-on-tap is free here: a new spinKey mid-animation just cancels the
 // pending timers in the effect cleanup and starts over.
-export const ROLL_MS = 350;
-export const LAND_MS = 220;
+export const ROLL_MS = 380;
+export const LAND_MS = 240;
 export const TOTAL_ANIMATION_MS = ROLL_MS + LAND_MS;
 
-const SIZE_CLASSES = {
-  sm: 'h-9 w-9 text-sm rounded-lg',
-  md: 'h-14 w-14 text-xl rounded-xl',
-  lg: 'h-24 w-24 text-4xl rounded-2xl',
-} as const;
+const SIZE_PX = {
+  sm: { box: 42, font: 17 },
+  md: { box: 58, font: 26 },
+  lg: { box: 76, font: 34 },
+};
 
-export type DieSize = keyof typeof SIZE_CLASSES;
+export type DieSize = keyof typeof SIZE_PX;
 
-interface DieProps {
-  /** Final value to land on. */
-  value: number;
-  /** Number of sides — only used to bound the random faces shown mid-roll. */
-  sides: number;
-  /** Bump this to trigger a new roll animation; 0 (or unchanged) renders statically. */
-  spinKey: number;
-  size?: DieSize;
-  /** Dropped by a kh/kl spec, or a non-chosen bonus/penalty candidate — shown muted, struck through. */
-  dimmed?: boolean;
+/** 'tens'/'units' mirror the engine's d100 breakdown (a shared units die, one tens die per
+ * bonus/penalty candidate); 'plain' is any other die (Dice Tray, weapon damage, notation). */
+export type DieVariant = 'plain' | 'tens' | 'units';
+
+function randomFace(variant: DieVariant, sides: number): number {
+  if (variant === 'tens') return Math.floor(Math.random() * 10) * 10;
+  if (variant === 'units') return Math.floor(Math.random() * 10);
+  return 1 + Math.floor(Math.random() * Math.max(1, sides));
 }
 
-export default function Die({ value, sides, spinKey, size = 'md', dimmed = false }: DieProps) {
+function formatFace(variant: DieVariant, n: number): string {
+  if (variant === 'tens') return n === 0 ? '00' : String(n);
+  return String(n);
+}
+
+interface DieProps {
+  /** Final value to land on (raw — e.g. a tens die's value is already ×10, per the engine). */
+  value: number;
+  /** Number of sides — only used to bound the random faces shown mid-roll for 'plain' dice. */
+  sides?: number;
+  /** Bump this to trigger a new roll animation; 0 (or unchanged) renders statically. */
+  spinKey: number;
+  variant?: DieVariant;
+  size?: DieSize;
+  /** Small caps label beneath the die, e.g. "tens" / "units". */
+  kind?: string;
+  /** Highlighted as the chosen candidate among bonus/penalty alternates. */
+  kept?: boolean;
+  /** Dropped by a kh/kl spec, or a non-chosen bonus/penalty candidate — dimmed, desaturated. */
+  discarded?: boolean;
+}
+
+export default function Die({
+  value,
+  sides = 10,
+  spinKey,
+  variant = 'plain',
+  size = 'md',
+  kind,
+  kept = false,
+  discarded = false,
+}: DieProps) {
   const [display, setDisplay] = useState(value);
-  const [phase, setPhase] = useState<'idle' | 'rolling' | 'landing'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'rolling' | 'settled'>('idle');
 
   useEffect(() => {
     // spinKey 0 means "render statically" (initial mount, or a historical Roll Log entry
@@ -53,12 +82,12 @@ export default function Die({ value, sides, spinKey, size = 'md', dimmed = false
 
     setPhase('rolling');
     const interval = window.setInterval(() => {
-      setDisplay(1 + Math.floor(Math.random() * Math.max(1, sides)));
-    }, 65);
+      setDisplay(randomFace(variant, sides));
+    }, 55);
     const settle = window.setTimeout(() => {
       window.clearInterval(interval);
       setDisplay(value);
-      setPhase('landing');
+      setPhase('settled');
     }, ROLL_MS);
     const rest = window.setTimeout(() => setPhase('idle'), TOTAL_ANIMATION_MS);
 
@@ -67,17 +96,22 @@ export default function Die({ value, sides, spinKey, size = 'md', dimmed = false
       window.clearTimeout(settle);
       window.clearTimeout(rest);
     };
-  }, [spinKey, value, sides]);
+  }, [spinKey, value, sides, variant]);
+
+  const { box, font } = SIZE_PX[size];
 
   return (
     <div
-      className={`grid shrink-0 place-items-center border font-black tabular-nums shadow-inner transition-colors duration-200 ${SIZE_CLASSES[size]} ${
-        dimmed
-          ? 'border-zinc-800 bg-zinc-900 text-zinc-600 line-through opacity-60'
-          : 'border-violet-400/30 bg-gradient-to-br from-zinc-800 to-zinc-900 text-zinc-50'
-      } ${phase === 'rolling' ? 'die-rolling' : ''} ${phase === 'landing' ? 'die-landing' : ''}`}
+      className={`die ${phase === 'rolling' ? 'tumbling' : ''} ${phase === 'settled' ? 'settled' : ''} ${
+        kept ? 'kept' : ''
+      } ${discarded ? 'discarded' : ''}`}
+      style={{ width: box, height: box }}
     >
-      {display}
+      <div className="die-face" />
+      <span className="die-digit tabular-nums" style={{ fontSize: font, paddingTop: font * 0.2 }}>
+        {formatFace(variant, display)}
+      </span>
+      {kind && <span className="die-kind">{kind}</span>}
     </div>
   );
 }
