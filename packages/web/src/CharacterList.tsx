@@ -32,14 +32,12 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-8">
-      <h1 className="text-2xl font-semibold text-zinc-100">{t.characters.title}</h1>
-
+    <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-6">
       <div className="flex gap-2">
         <button
           type="button"
           onClick={handleNew}
-          className="flex-1 rounded-xl bg-violet-500 py-3 font-semibold text-white active:bg-violet-600"
+          className="flex-1 rounded-xl bg-violet-500 py-3 font-semibold text-white shadow-lg shadow-violet-950/40 transition-transform active:scale-[0.98] active:bg-violet-600"
         >
           {t.characters.new}
         </button>

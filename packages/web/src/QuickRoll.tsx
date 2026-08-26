@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   MAX_MODIFIER_DICE,
   skillRoll,
@@ -9,6 +9,7 @@ import {
 import { rollDisplay } from './successLevel';
 import { useRollLog } from './RollLogContext';
 import { useLocale } from './i18n/LocaleContext';
+import Die, { TOTAL_ANIMATION_MS } from './Die';
 
 const DIFFICULTIES: Difficulty[] = ['regular', 'hard', 'extreme'];
 
@@ -18,25 +19,32 @@ export default function QuickRoll() {
   const [modifierDice, setModifierDice] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>('regular');
   const [result, setResult] = useState<SkillRollResult | null>(null);
-  const [rolling, setRolling] = useState(false);
+  const [spinKey, setSpinKey] = useState(0);
+  const [revealed, setRevealed] = useState(false);
   const { addSkillEntry } = useRollLog();
 
   const thresholds = thresholdsFor(skill);
 
   function roll() {
-    setRolling(true);
     const next = skillRoll(skill, { modifierDice, difficulty });
     setResult(next);
     addSkillEntry(next);
-    window.setTimeout(() => setRolling(false), 300);
+    setRevealed(false);
+    setSpinKey((k) => k + 1);
   }
 
+  useEffect(() => {
+    if (spinKey === 0) return;
+    const timeout = window.setTimeout(() => setRevealed(true), TOTAL_ANIMATION_MS);
+    return () => window.clearTimeout(timeout);
+  }, [spinKey]);
+
   const style = result ? rollDisplay(result, t) : null;
+  const isFumble = revealed && result?.level === 'fumble';
+  const isCritical = revealed && result?.level === 'critical';
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
-      <h1 className="text-center text-2xl font-semibold text-zinc-100">{t.quickRoll.title}</h1>
-
+    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <label className="flex flex-col gap-2">
         <span className="text-sm text-zinc-400">{t.quickRoll.skillValue}</span>
         <input
@@ -97,13 +105,17 @@ export default function QuickRoll() {
 
       {result && style && (
         <div
-          className={`flex flex-col items-center gap-2 rounded-2xl px-6 py-8 transition-opacity duration-300 ${style.classes} ${
-            rolling ? 'opacity-60' : 'opacity-100'
-          }`}
+          className={`relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl px-6 py-8 transition-colors duration-300 ${revealed ? style.classes : 'bg-zinc-900 text-zinc-100'} ${
+            isFumble ? 'result-fumble' : ''
+          } ${isCritical ? 'result-critical' : ''}`}
         >
-          <span className="text-6xl font-black tabular-nums">{result.roll}</span>
-          <span className="text-lg font-semibold uppercase tracking-wide">{style.label}</span>
-          {result.candidates.length > 1 && (
+          <Die value={result.roll} sides={100} spinKey={spinKey} size="lg" />
+          <span
+            className={`text-lg font-semibold uppercase tracking-wide transition-opacity duration-200 ${revealed ? 'opacity-100' : 'opacity-0'}`}
+          >
+            {style.label}
+          </span>
+          {revealed && result.candidates.length > 1 && (
             <span className="text-xs opacity-80">
               {t.quickRoll.candidates(result.candidates.join(', '))}
             </span>
@@ -114,7 +126,7 @@ export default function QuickRoll() {
       <button
         type="button"
         onClick={roll}
-        className="w-full rounded-2xl bg-violet-500 py-5 text-xl font-bold text-white shadow-lg shadow-violet-950/50 active:bg-violet-600"
+        className="w-full rounded-2xl bg-violet-500 py-5 text-xl font-bold text-white shadow-lg shadow-violet-950/50 transition-transform active:scale-[0.98] active:bg-violet-600"
       >
         {t.quickRoll.roll}
       </button>

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isValidNotation, rollNotation, type DiceRollResult } from 'coc7-engine';
 import DiceGroups from './DiceGroups';
 import { useRollLog } from './RollLogContext';
 import { useLocale } from './i18n/LocaleContext';
+import { TOTAL_ANIMATION_MS } from './Die';
 
 const QUICK_DICE = [3, 4, 6, 8, 10, 20, 100];
 
@@ -11,6 +12,8 @@ export default function DiceTray() {
   const [notation, setNotation] = useState('');
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [spinKey, setSpinKey] = useState(0);
+  const [revealed, setRevealed] = useState(false);
   const { addNotationEntry } = useRollLog();
 
   function roll(expr: string) {
@@ -19,11 +22,19 @@ export default function DiceTray() {
       setResult(next);
       addNotationEntry(next);
       setError(null);
+      setRevealed(false);
+      setSpinKey((k) => k + 1);
     } catch (err) {
       setResult(null);
       setError(err instanceof Error ? err.message : 'Invalid expression');
     }
   }
+
+  useEffect(() => {
+    if (spinKey === 0) return;
+    const timeout = window.setTimeout(() => setRevealed(true), TOTAL_ANIMATION_MS);
+    return () => window.clearTimeout(timeout);
+  }, [spinKey]);
 
   function rollQuick(sides: number) {
     setNotation(`1d${sides}`);
@@ -38,16 +49,14 @@ export default function DiceTray() {
   const notationInvalid = notation.trim() !== '' && !isValidNotation(notation);
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
-      <h1 className="text-center text-2xl font-semibold text-zinc-100">{t.diceTray.title}</h1>
-
+    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <div className="grid grid-cols-4 gap-3">
         {QUICK_DICE.map((sides) => (
           <button
             key={sides}
             type="button"
             onClick={() => rollQuick(sides)}
-            className="rounded-xl border border-zinc-700 bg-zinc-900 py-4 text-lg font-semibold text-zinc-100 active:bg-zinc-800"
+            className="rounded-xl border border-zinc-700 bg-zinc-900 py-4 text-lg font-semibold text-zinc-100 transition-transform active:scale-95 active:bg-zinc-800"
           >
             d{sides}
           </button>
@@ -82,12 +91,16 @@ export default function DiceTray() {
       {error && !notationInvalid && <p className="text-center text-sm text-red-400">{error}</p>}
 
       {result && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-zinc-700 bg-zinc-900 px-6 py-6">
+        <div className="flex flex-col gap-4 rounded-2xl border border-zinc-700 bg-zinc-900 px-6 py-6">
           <div className="flex items-baseline justify-between">
             <span className="text-sm text-zinc-400">{result.notation}</span>
-            <span className="text-5xl font-black tabular-nums text-zinc-50">{result.total}</span>
+            <span
+              className={`text-5xl font-black tabular-nums text-zinc-50 transition-opacity duration-200 ${revealed ? 'opacity-100' : 'opacity-0'}`}
+            >
+              {result.total}
+            </span>
           </div>
-          <DiceGroups groups={result.groups} />
+          <DiceGroups groups={result.groups} spinKey={spinKey} />
         </div>
       )}
     </div>

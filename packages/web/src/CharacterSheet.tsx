@@ -15,6 +15,7 @@ import { rollDisplay } from './successLevel';
 import { useLocale } from './i18n/LocaleContext';
 import type { Translations } from './i18n/translations';
 import { damageNotation, makeId, type CharacterSkill, type CharacterWeapon, type Investigator } from './character';
+import Die from './Die';
 
 const CHAR_KEYS: (keyof Characteristics)[] = ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU'];
 
@@ -60,11 +61,12 @@ function ResourceTracker({
   );
 }
 
-function RollBadge({ result, t }: { result: SkillRollResult; t: Translations }) {
+function RollBadge({ result, t, spinKey }: { result: SkillRollResult; t: Translations; spinKey: number }) {
   const style = rollDisplay(result, t);
   return (
-    <span className={`rounded px-2 py-0.5 text-xs font-semibold ${style.classes}`}>
-      {result.roll} {style.label}
+    <span className={`flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2 text-xs font-semibold ${style.classes}`}>
+      <Die value={result.roll} sides={100} spinKey={spinKey} size="sm" />
+      {style.label}
     </span>
   );
 }
@@ -75,6 +77,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
   const { addSkillEntry, addNotationEntry } = useRollLog();
   const [skillResults, setSkillResults] = useState<Record<string, SkillRollResult>>({});
   const [weaponResults, setWeaponResults] = useState<Record<string, DiceRollResult | SkillRollResult>>({});
+  const [spinKeys, setSpinKeys] = useState<Record<string, number>>({});
   const [newSkillName, setNewSkillName] = useState('');
   const [newWeaponName, setNewWeaponName] = useState('');
   const [sanLoss, setSanLoss] = useState('1/1d6');
@@ -102,9 +105,14 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
   const mythos = investigator.skills.find((s) => s.key === 'cthulhuMythos')?.value ?? 0;
   const maxSan = maxSanity(mythos);
 
+  function bumpSpinKey(key: string) {
+    setSpinKeys((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
+  }
+
   function rollSkill(skill: CharacterSkill) {
     const result = skillRoll(skill.value);
     setSkillResults((prev) => ({ ...prev, [skill.id]: result }));
+    bumpSpinKey(skill.id);
     addSkillEntry(result);
   }
 
@@ -112,6 +120,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
     const skill = investigator!.skills.find((s) => s.name === weapon.skill);
     const result = skillRoll(skill?.value ?? 0);
     setWeaponResults((prev) => ({ ...prev, [weapon.id]: result }));
+    bumpSpinKey(weapon.id);
     addSkillEntry(result);
   }
 
@@ -146,7 +155,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
+    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <div className="flex items-center justify-between">
         <button type="button" onClick={onBack} className="text-sm text-violet-300 underline">
           {t.sheet.back}
@@ -324,7 +333,9 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
               >
                 {t.sheet.roll}
               </button>
-              {skillResults[skill.id] && <RollBadge result={skillResults[skill.id]} t={t} />}
+              {skillResults[skill.id] && (
+                <RollBadge result={skillResults[skill.id]} t={t} spinKey={spinKeys[skill.id] ?? 0} />
+              )}
               <button
                 type="button"
                 onClick={() =>
@@ -442,9 +453,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                 </button>
                 {weaponResults[weapon.id] &&
                   ('level' in weaponResults[weapon.id] ? (
-                    <RollBadge result={weaponResults[weapon.id] as SkillRollResult} t={t} />
+                    <RollBadge
+                      result={weaponResults[weapon.id] as SkillRollResult}
+                      t={t}
+                      spinKey={spinKeys[weapon.id] ?? 0}
+                    />
                   ) : (
-                    <span className="text-sm font-semibold text-zinc-200">
+                    <span className="rounded-full bg-zinc-800 py-0.5 pl-2 pr-3 text-sm font-semibold tabular-nums text-zinc-100">
                       {(weaponResults[weapon.id] as DiceRollResult).total} {t.sheet.dmg}
                     </span>
                   ))}

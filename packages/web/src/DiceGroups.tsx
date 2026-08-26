@@ -1,25 +1,24 @@
 import type { DiceGroup } from 'coc7-engine';
+import Die from './Die';
 
-export default function DiceGroups({ groups }: { groups: DiceGroup[] }) {
+export default function DiceGroups({ groups, spinKey }: { groups: DiceGroup[]; spinKey: number }) {
   return (
     <>
       {groups.map((group, i) => (
-        <div key={i} className="flex items-center justify-between gap-3 text-sm">
-          <span className="shrink-0 text-zinc-400">{group.spec}</span>
-          <span className="flex flex-wrap justify-end gap-1">
+        <div key={i} className="flex flex-col gap-2">
+          <span className="text-xs text-zinc-500">{group.spec}</span>
+          <div className="flex flex-wrap gap-2">
             {group.rolls.map((value, j) => (
-              <span
+              <Die
                 key={j}
-                className={`rounded px-1.5 py-0.5 tabular-nums ${
-                  group.dropped.includes(j)
-                    ? 'text-zinc-600 line-through'
-                    : 'bg-zinc-800 text-zinc-200'
-                }`}
-              >
-                {value}
-              </span>
+                value={value}
+                sides={group.sides}
+                spinKey={spinKey}
+                size="sm"
+                dimmed={group.dropped.includes(j)}
+              />
             ))}
-          </span>
+          </div>
         </div>
       ))}
     </>

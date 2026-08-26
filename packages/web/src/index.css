@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap');
 @import 'tailwindcss';
 
 @theme {
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Cinzel', Georgia, serif;
 }
 
 html {
@@ -10,6 +12,91 @@ html {
 
 body {
   margin: 0;
-  background: #0b0b0f;
+  min-height: 100svh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139, 92, 246, 0.16), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(16, 185, 129, 0.08), transparent),
+    #08080b;
   color: #e5e4e7;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes die-tumble {
+    0% {
+      transform: rotate(0deg) scale(1);
+    }
+    25% {
+      transform: rotate(-18deg) scale(1.08);
+    }
+    50% {
+      transform: rotate(12deg) scale(0.92);
+    }
+    75% {
+      transform: rotate(-10deg) scale(1.06);
+    }
+    100% {
+      transform: rotate(0deg) scale(1);
+    }
+  }
+
+  @keyframes die-land {
+    0% {
+      transform: scale(1.35) rotate(0deg);
+    }
+    55% {
+      transform: scale(0.9) rotate(-4deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+  }
+
+  @keyframes fumble-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-6px) rotate(-1deg);
+    }
+    40% {
+      transform: translateX(5px) rotate(1deg);
+    }
+    60% {
+      transform: translateX(-4px) rotate(-0.5deg);
+    }
+    80% {
+      transform: translateX(3px) rotate(0.5deg);
+    }
+  }
+
+  @keyframes critical-glow {
+    0% {
+      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.6);
+    }
+    100% {
+      box-shadow: 0 0 0 18px rgba(251, 191, 36, 0);
+    }
+  }
+
+  .die-rolling {
+    animation: die-tumble 0.35s ease-in-out infinite;
+  }
+
+  .die-landing {
+    animation: die-land 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .result-fumble {
+    animation: fumble-shake 0.45s ease-in-out;
+  }
+
+  .result-critical::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    animation: critical-glow 0.7s ease-out;
+    pointer-events: none;
+  }
 }

@@ -94,7 +94,7 @@ function NotationEntryCard({ entry }: { entry: Extract<LogEntry, { kind: 'notati
       <div className="flex items-center justify-between">
         <span className="text-3xl font-black tabular-nums text-zinc-50">{entry.result.total}</span>
       </div>
-      <DiceGroups groups={entry.result.groups} />
+      <DiceGroups groups={entry.result.groups} spinKey={0} />
     </div>
   );
 }
@@ -104,10 +104,9 @@ export default function RollLog() {
   const { entries, clear } = useRollLog();
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-100">{t.rollLog.title}</h1>
-        {entries.length > 0 && (
+    <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-6">
+      {entries.length > 0 && (
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={clear}
@@ -115,8 +114,8 @@ export default function RollLog() {
           >
             {t.rollLog.clear}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {entries.length === 0 && (
         <p className="pt-12 text-center text-sm text-zinc-500">{t.rollLog.empty}</p>
