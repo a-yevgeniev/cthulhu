@@ -8,6 +8,7 @@ export interface Translations {
     diceTray: string;
     characters: string;
     rollLog: string;
+    table: string;
   };
   difficulty: {
     regular: string;
@@ -113,6 +114,36 @@ export interface Translations {
   };
   /** Localized display names for the default 7e skill list, keyed by the stable skill key. */
   skills: Record<string, string>;
+  table: {
+    title: string;
+    createRoom: string;
+    joinRoom: string;
+    yourName: string;
+    namePlaceholder: string;
+    roomCode: string;
+    roomCodePlaceholder: string;
+    create: string;
+    join: string;
+    connecting: string;
+    roomLabel: string;
+    keeperBadge: string;
+    players: string;
+    leaveRoom: string;
+    composerLabel: string;
+    composerSkillPlaceholder: string;
+    composerNotationPlaceholder: string;
+    secret: string;
+    rollSkillTab: string;
+    rollNotationTab: string;
+    send: string;
+    empty: string;
+    promptFrom: (keeperName: string, skillLabel: string) => string;
+    dismiss: string;
+    requestRollHeading: string;
+    requestRollTarget: string;
+    requestRollSkillPlaceholder: string;
+    requestRollSend: string;
+  };
 }
 
 const enSkills: Record<string, string> = {
@@ -223,6 +254,7 @@ export const en: Translations = {
     diceTray: 'Dice Tray',
     characters: 'Characters',
     rollLog: 'Roll Log',
+    table: 'Table',
   },
   difficulty: {
     regular: 'Regular',
@@ -327,6 +359,36 @@ export const en: Translations = {
     notes: 'Notes',
   },
   skills: enSkills,
+  table: {
+    title: 'Table',
+    createRoom: 'Create a room',
+    joinRoom: 'Join a room',
+    yourName: 'Your name',
+    namePlaceholder: 'Name',
+    roomCode: 'Room code',
+    roomCodePlaceholder: 'ABCDE',
+    create: 'Create',
+    join: 'Join',
+    connecting: 'Connecting…',
+    roomLabel: 'Room',
+    keeperBadge: 'Keeper',
+    players: 'Players',
+    leaveRoom: 'Leave room',
+    composerLabel: 'Roll',
+    composerSkillPlaceholder: 'Skill name (e.g. Spot Hidden)',
+    composerNotationPlaceholder: 'Notation (e.g. 1d6+2)',
+    secret: 'Secret',
+    rollSkillTab: 'Skill',
+    rollNotationTab: 'Dice',
+    send: 'Roll',
+    empty: 'No rolls yet.',
+    promptFrom: (keeperName, skillLabel) => `${keeperName} asks for ${skillLabel}`,
+    dismiss: 'Dismiss',
+    requestRollHeading: 'Request a roll',
+    requestRollTarget: 'Player',
+    requestRollSkillPlaceholder: 'Skill name',
+    requestRollSend: 'Ask',
+  },
 };
 
 export const uk: Translations = {
@@ -337,6 +399,7 @@ export const uk: Translations = {
     diceTray: 'Лоток кубиків',
     characters: 'Персонажі',
     rollLog: 'Журнал кидків',
+    table: 'Стіл',
   },
   difficulty: {
     regular: 'Звичайна',
@@ -441,6 +504,36 @@ export const uk: Translations = {
     notes: 'Нотатки',
   },
   skills: ukSkills,
+  table: {
+    title: 'Стіл',
+    createRoom: 'Створити кімнату',
+    joinRoom: 'Приєднатися до кімнати',
+    yourName: "Ваше ім'я",
+    namePlaceholder: "Ім'я",
+    roomCode: 'Код кімнати',
+    roomCodePlaceholder: 'ABCDE',
+    create: 'Створити',
+    join: 'Приєднатися',
+    connecting: "З'єднання…",
+    roomLabel: 'Кімната',
+    keeperBadge: 'Вартовий',
+    players: 'Гравці',
+    leaveRoom: 'Покинути кімнату',
+    composerLabel: 'Кидок',
+    composerSkillPlaceholder: 'Назва навички (напр. Спостережливість)',
+    composerNotationPlaceholder: 'Запис (напр. 1d6+2)',
+    secret: 'Таємно',
+    rollSkillTab: 'Навичка',
+    rollNotationTab: 'Кубики',
+    send: 'Кинути',
+    empty: 'Ще немає кидків.',
+    promptFrom: (keeperName, skillLabel) => `${keeperName} просить ${skillLabel}`,
+    dismiss: 'Приховати',
+    requestRollHeading: 'Запросити кидок',
+    requestRollTarget: 'Гравець',
+    requestRollSkillPlaceholder: 'Назва навички',
+    requestRollSend: 'Запросити',
+  },
 };
 
 export const TRANSLATIONS: Record<Locale, Translations> = { en, uk };
