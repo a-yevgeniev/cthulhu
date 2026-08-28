@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--workspace=coc7-web"],
       "port": 5173
+    },
+    {
+      "name": "coc7-server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace=coc7-server"],
+      "port": 4000
     }
   ]
 }

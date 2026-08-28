@@ -122,6 +122,13 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
     addSkillEntry(result);
   }
 
+  function rollCharacteristic(key: keyof Characteristics) {
+    const result = skillRoll(investigator!.characteristics[key]);
+    setSkillResults((prev) => ({ ...prev, [key]: result }));
+    bumpSpinKey(key);
+    addSkillEntry(result);
+  }
+
   function rollWeaponAttack(weapon: CharacterWeapon) {
     const skill = investigator!.skills.find((s) => s.name === weapon.skill);
     const result = skillRoll(skill?.value ?? 0);
@@ -206,10 +213,10 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
 
       <div>
         <h2 className={`mb-2 ${LABEL}`}>{t.sheet.characteristics}</h2>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="flex flex-col">
           {CHAR_KEYS.map((key) => (
-            <label key={key} className="flex flex-col items-center gap-1">
-              <span className={LABEL}>{key}</span>
+            <div key={key} className="flex items-center gap-2 border-b border-ink-line/60 py-2">
+              <span className={`w-9 ${LABEL}`}>{key}</span>
               <input
                 type="number"
                 value={investigator.characteristics[key]}
@@ -219,9 +226,19 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
                     characteristics: { ...c.characteristics, [key]: Number(e.target.value) },
                   }))
                 }
-                className={`${FIELD} w-full px-1 py-2 text-center font-display text-lg`}
+                className={`${FIELD} w-16 px-1 py-1 text-center font-display text-lg`}
               />
-            </label>
+              <button
+                type="button"
+                onClick={() => rollCharacteristic(key)}
+                className={`px-2 py-1 text-[11px] uppercase tracking-wider ${GHOST_BTN}`}
+              >
+                {t.sheet.roll}
+              </button>
+              {skillResults[key] && (
+                <RollBadge result={skillResults[key]} t={t} spinKey={spinKeys[key] ?? 0} />
+              )}
+            </div>
           ))}
         </div>
       </div>
