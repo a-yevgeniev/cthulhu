@@ -1,5 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { createBlankInvestigator, makeId, type Investigator } from './character';
+import {
+  createBlankInvestigator,
+  createPregenInvestigator,
+  makeId,
+  type Investigator,
+  type PregenTemplate,
+} from './character';
 import type { Translations } from './i18n/translations';
 
 const STORAGE_KEY = 'coc7-characters';
@@ -18,6 +24,7 @@ function loadCharacters(): Investigator[] {
 interface CharacterContextValue {
   characters: Investigator[];
   createCharacter: (t: Translations) => string;
+  createPregenCharacter: (template: PregenTemplate, t: Translations) => string;
   updateCharacter: (id: string, updater: (c: Investigator) => Investigator) => void;
   deleteCharacter: (id: string) => void;
   /** Returns an error message, or null on success. */
@@ -38,6 +45,11 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
       characters,
       createCharacter(t) {
         const c = createBlankInvestigator(t.skills);
+        setCharacters((prev) => [c, ...prev]);
+        return c.id;
+      },
+      createPregenCharacter(template, t) {
+        const c = createPregenInvestigator(template, t.skills, t.pregens[template.key]);
         setCharacters((prev) => [c, ...prev]);
         return c.id;
       },

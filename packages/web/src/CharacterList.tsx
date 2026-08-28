@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useCharacters } from './CharacterContext';
 import { useLocale } from './i18n/LocaleContext';
-import type { Investigator } from './character';
+import { PREGEN_TEMPLATES, type Investigator } from './character';
 
 function exportCharacter(investigator: Investigator) {
   const blob = new Blob([JSON.stringify(investigator, null, 2)], { type: 'application/json' });
@@ -15,12 +15,18 @@ function exportCharacter(investigator: Investigator) {
 
 export default function CharacterList({ onOpen }: { onOpen: (id: string) => void }) {
   const { t } = useLocale();
-  const { characters, createCharacter, deleteCharacter, importCharacter } = useCharacters();
+  const { characters, createCharacter, createPregenCharacter, deleteCharacter, importCharacter } =
+    useCharacters();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [showPregens, setShowPregens] = useState(false);
 
   function handleNew() {
     onOpen(createCharacter(t));
+  }
+
+  function handlePregen(template: (typeof PREGEN_TEMPLATES)[number]) {
+    onOpen(createPregenCharacter(template, t));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -43,6 +49,15 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
         </button>
         <button
           type="button"
+          onClick={() => setShowPregens((v) => !v)}
+          className={`border px-4 py-3 text-xs uppercase tracking-widest transition-colors ${
+            showPregens ? 'border-brass text-brass' : 'border-ink-line text-paper-dim hover:border-brass hover:text-paper'
+          }`}
+        >
+          {t.characters.pregens}
+        </button>
+        <button
+          type="button"
           onClick={() => fileInputRef.current?.click()}
           className="border border-ink-line px-4 py-3 text-xs uppercase tracking-widest text-paper-dim transition-colors hover:border-brass hover:text-paper"
         >
@@ -57,6 +72,33 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
         />
       </div>
       {importError && <p className="text-sm text-oxblood">{importError}</p>}
+
+      {showPregens && (
+        <div className="flex flex-col border border-ink-line">
+          <h2 className="border-b border-ink-line px-4 py-2 text-[10px] uppercase tracking-widest text-paper-dim">
+            {t.characters.pregensHeading}
+          </h2>
+          {PREGEN_TEMPLATES.map((template) => {
+            const flavor = t.pregens[template.key];
+            return (
+              <div key={template.key} className="flex items-center gap-2 border-b border-ink-line/60 px-4 py-3 last:border-b-0">
+                <div className="flex-1">
+                  <span className="block font-display text-base text-paper">{flavor.name}</span>
+                  <span className="block text-xs text-paper-dim">{flavor.occupation}</span>
+                  <span className="mt-1 block text-xs text-paper-dim/80">{flavor.notes}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handlePregen(template)}
+                  className="shrink-0 border border-ink-line px-3 py-1.5 text-[11px] uppercase tracking-wider text-paper-dim transition-colors hover:border-brass hover:text-brass"
+                >
+                  {t.characters.usePregen}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {characters.length === 0 && (
         <p className="pt-12 text-center text-sm text-paper-dim">{t.characters.empty}</p>
