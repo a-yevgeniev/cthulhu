@@ -27,12 +27,17 @@ interface TableState {
   ledger: LedgerEntry[];
   error: string | null;
   prompt: RollPrompt | null;
+  /** Which local Investigator (CharacterContext) this player is playing at the table, if any —
+   * purely a client-side convenience so the roll composer can offer that character's own
+   * skills/weapons instead of manual entry every time. The server only ever sees a name. */
+  selectedCharacterId: string | null;
 }
 
 interface TableContextValue extends TableState {
   createRoom: (name: string) => void;
   joinRoom: (roomCode: string, name: string) => void;
   leaveRoom: () => void;
+  selectCharacter: (id: string | null) => void;
   rollSkill: (args: { skill: number; label?: string; difficulty?: Difficulty; modifierDice?: number; secret?: boolean }) => void;
   rollNotation: (args: { notation: string; label?: string; secret?: boolean }) => void;
   rollSanity: (args: { sanity: number; startingSanity?: number; lostThisSession?: number; loss: string; secret?: boolean }) => void;
@@ -52,6 +57,7 @@ const initialState: TableState = {
   ledger: [],
   error: null,
   prompt: null,
+  selectedCharacterId: null,
 };
 
 export function TableProvider({ children }: { children: ReactNode }) {
@@ -122,7 +128,13 @@ export function TableProvider({ children }: { children: ReactNode }) {
   const leaveRoom = useCallback(() => {
     socketRef.current?.disconnect();
     socketRef.current = null;
-    setState(initialState);
+    // Keep the character selection — the player is still the same person, likely to rejoin
+    // (this room or another) as the same investigator.
+    setState((s) => ({ ...initialState, selectedCharacterId: s.selectedCharacterId }));
+  }, []);
+
+  const selectCharacter = useCallback((id: string | null) => {
+    setState((s) => ({ ...s, selectedCharacterId: id }));
   }, []);
 
   function guardedEmit<T>(event: string, payload: Record<string, unknown>, onAck?: (res: T) => void) {
@@ -167,6 +179,7 @@ export function TableProvider({ children }: { children: ReactNode }) {
         createRoom,
         joinRoom,
         leaveRoom,
+        selectCharacter,
         rollSkill,
         rollNotation,
         rollSanity,

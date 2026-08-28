@@ -153,6 +153,10 @@ export interface Translations {
     requestRollTarget: string;
     requestRollSkillPlaceholder: string;
     requestRollSend: string;
+    playAs: string;
+    guestOption: string;
+    fromCharacter: string;
+    pickSkillPlaceholder: string;
   };
 }
 
@@ -438,6 +442,10 @@ export const en: Translations = {
     requestRollTarget: 'Player',
     requestRollSkillPlaceholder: 'Skill name',
     requestRollSend: 'Ask',
+    playAs: 'Play as',
+    guestOption: '— Guest (custom name) —',
+    fromCharacter: 'From character',
+    pickSkillPlaceholder: 'Pick a skill…',
   },
 };
 
@@ -622,6 +630,10 @@ export const uk: Translations = {
     requestRollTarget: 'Гравець',
     requestRollSkillPlaceholder: 'Назва навички',
     requestRollSend: 'Запросити',
+    playAs: 'Грати за',
+    guestOption: '— Гість (власне ім\'я) —',
+    fromCharacter: 'Від персонажа',
+    pickSkillPlaceholder: 'Обрати навичку…',
   },
 };
 

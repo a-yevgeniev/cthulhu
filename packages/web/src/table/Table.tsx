@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import type { Difficulty } from 'coc7-engine';
+import { derivedStats, type Difficulty } from 'coc7-engine';
 import type { LedgerEntry } from 'coc7-protocol';
 import { useTable } from './TableContext';
 import { useLocale } from '../i18n/LocaleContext';
+import { useCharacters } from '../CharacterContext';
+import { damageNotation, type CharacterWeapon } from '../character';
 import { rollDisplay } from '../successLevel';
 import Die from '../Die';
 import DiceGroups from '../DiceGroups';
@@ -16,12 +18,19 @@ const BRASS_BTN =
 
 function ConnectForm() {
   const { t } = useLocale();
-  const { status, error, createRoom, joinRoom, clearError } = useTable();
+  const { status, error, createRoom, joinRoom, clearError, selectCharacter, selectedCharacterId } = useTable();
+  const { characters } = useCharacters();
   const [mode, setMode] = useState<'create' | 'join'>('create');
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
 
   const connecting = status === 'connecting';
+
+  function handleSelectCharacter(id: string) {
+    selectCharacter(id || null);
+    const character = characters.find((c) => c.id === id);
+    if (character) setName(character.name.trim() || t.characters.unnamed);
+  }
 
   function submit() {
     if (!name.trim()) return;
@@ -51,6 +60,24 @@ function ConnectForm() {
           {t.table.joinRoom}
         </button>
       </div>
+
+      {characters.length > 0 && (
+        <label className="flex flex-col gap-1.5">
+          <span className={LABEL}>{t.table.playAs}</span>
+          <select
+            value={selectedCharacterId ?? ''}
+            onChange={(e) => handleSelectCharacter(e.target.value)}
+            className={`${FIELD} px-4 py-3 text-sm`}
+          >
+            <option value="">{t.table.guestOption}</option>
+            {characters.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name.trim() || t.characters.unnamed}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="flex flex-col gap-1.5">
         <span className={LABEL}>{t.table.yourName}</span>
@@ -143,7 +170,9 @@ function EntryRow({ entry, t }: { entry: LedgerEntry; t: ReturnType<typeof useLo
 
 function RollComposer() {
   const { t } = useLocale();
-  const { rollSkill, rollNotation } = useTable();
+  const { rollSkill, rollNotation, selectedCharacterId } = useTable();
+  const { characters } = useCharacters();
+  const character = characters.find((c) => c.id === selectedCharacterId);
   const [tab, setTab] = useState<'skill' | 'notation'>('skill');
   const [label, setLabel] = useState('');
   const [skillValue, setSkillValue] = useState(50);
@@ -161,9 +190,81 @@ function RollComposer() {
     }
   }
 
+  function pickCharacterSkill(skillId: string) {
+    const skill = character?.skills.find((s) => s.id === skillId);
+    if (!skill) return;
+    setTab('skill');
+    setLabel(skill.name);
+    setSkillValue(skill.value);
+  }
+
+  function rollWeaponAttack(weapon: CharacterWeapon) {
+    if (!character) return;
+    const skill = character.skills.find((s) => s.name === weapon.skill);
+    rollSkill({ skill: skill?.value ?? 0, label: `${weapon.name} (${t.sheet.attack})`, secret });
+  }
+
+  function rollWeaponDamage(weapon: CharacterWeapon) {
+    if (!character) return;
+    const derived = derivedStats(character.characteristics, character.age);
+    try {
+      rollNotation({
+        notation: damageNotation(weapon.damage, derived.damageBonus),
+        label: `${weapon.name} (${t.sheet.damage})`,
+        secret,
+      });
+    } catch {
+      // invalid damage notation on this weapon; editable on the character sheet
+    }
+  }
+
   return (
     <div className="flex flex-col gap-2 border border-ink-line px-4 py-3">
       <h2 className={LABEL}>{t.table.composerLabel}</h2>
+
+      {character && (
+        <div className="flex flex-col gap-2 border-b border-ink-line/60 pb-2">
+          <span className="text-[10px] uppercase tracking-widest text-brass">
+            {t.table.fromCharacter}: {character.name.trim() || t.characters.unnamed}
+          </span>
+          <select
+            value=""
+            onChange={(e) => pickCharacterSkill(e.target.value)}
+            className={`${FIELD} px-3 py-2 text-sm`}
+          >
+            <option value="">{t.table.pickSkillPlaceholder}</option>
+            {character.skills.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.value})
+              </option>
+            ))}
+          </select>
+          {character.weapons.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {character.weapons.map((w) => (
+                <div key={w.id} className="flex items-center gap-2">
+                  <span className="flex-1 truncate text-sm text-paper">{w.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => rollWeaponAttack(w)}
+                    className={`px-2 py-1 text-[11px] uppercase tracking-wider ${GHOST_BTN}`}
+                  >
+                    {t.sheet.attack}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => rollWeaponDamage(w)}
+                    className={`px-2 py-1 text-[11px] uppercase tracking-wider ${GHOST_BTN}`}
+                  >
+                    {t.sheet.damage}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button
           type="button"
