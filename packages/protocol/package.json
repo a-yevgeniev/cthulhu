@@ -1,0 +1,17 @@
+{
+  "name": "coc7-protocol",
+  "version": "0.1.0",
+  "description": "Shared Socket.IO event and payload types between coc7-server and coc7-web. Zero runtime dependencies.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "coc7-engine": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "license": "MIT"
+}

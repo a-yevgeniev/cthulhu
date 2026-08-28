@@ -4,12 +4,14 @@ import DiceTray from './DiceTray';
 import RollLog from './RollLog';
 import CharactersTab from './CharactersTab';
 import AppHeader from './AppHeader';
+import Table from './table/Table';
 import { RollLogProvider } from './RollLogContext';
 import { CharacterProvider } from './CharacterContext';
+import { TableProvider } from './table/TableContext';
 import { LocaleProvider, useLocale } from './i18n/LocaleContext';
-import { DieIcon, DiceTrayIcon, InvestigatorIcon, ScrollIcon } from './icons';
+import { DieIcon, DiceTrayIcon, InvestigatorIcon, ScrollIcon, TableIcon } from './icons';
 
-const TAB_IDS = ['quick', 'tray', 'characters', 'log'] as const;
+const TAB_IDS = ['quick', 'tray', 'characters', 'log', 'table'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 const SCREENS: Record<TabId, React.ComponentType> = {
@@ -17,6 +19,7 @@ const SCREENS: Record<TabId, React.ComponentType> = {
   tray: DiceTray,
   characters: CharactersTab,
   log: RollLog,
+  table: Table,
 };
 
 const TAB_ICONS: Record<TabId, React.ComponentType<{ className?: string }>> = {
@@ -24,6 +27,7 @@ const TAB_ICONS: Record<TabId, React.ComponentType<{ className?: string }>> = {
   tray: DiceTrayIcon,
   characters: InvestigatorIcon,
   log: ScrollIcon,
+  table: TableIcon,
 };
 
 function AppShell() {
@@ -36,6 +40,7 @@ function AppShell() {
     tray: t.tabs.diceTray,
     characters: t.tabs.characters,
     log: t.tabs.rollLog,
+    table: t.tabs.table,
   };
 
   return (
@@ -73,7 +78,9 @@ export default function App() {
     <LocaleProvider>
       <CharacterProvider>
         <RollLogProvider>
-          <AppShell />
+          <TableProvider>
+            <AppShell />
+          </TableProvider>
         </RollLogProvider>
       </CharacterProvider>
     </LocaleProvider>

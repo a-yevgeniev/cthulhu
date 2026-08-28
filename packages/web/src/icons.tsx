@@ -44,6 +44,17 @@ export function ScrollIcon({ className }: IconProps) {
   );
 }
 
+export function TableIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={className}>
+      <ellipse cx="12" cy="8.5" rx="8" ry="3.5" />
+      <path d="M4 8.5V15c0 1.9 3.6 3.5 8 3.5s8-1.6 8-3.5V8.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="8" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="14.5" cy="9" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function SkullIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className={className}>
