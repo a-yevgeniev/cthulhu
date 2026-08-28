@@ -24,6 +24,8 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run build --workspace=coc7-web
+        env:
+          VITE_COC7_SERVER_URL: https://coc7-server.fly.dev
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

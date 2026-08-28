@@ -163,8 +163,13 @@ end-of-scenario development.
 ## Phase 4 — Shared table (Track B only) 🚧 FIRST VERTICAL SLICE, on branch `phase-4-shared-table`
 
 Built and verified locally (three simultaneous browser tabs: Keeper + two players), **not
-merged to master and not deployed anywhere**. See [`packages/server/README.md`](packages/server/README.md)
-for the full list of what's stubbed vs. real.
+merged to master**. The server is live at
+[coc7-server.fly.dev](https://coc7-server.fly.dev) (Fly.io, `iad`, a mounted volume for the
+SQLite ledger) — but the web app doesn't point at it yet in production, since
+`VITE_COC7_SERVER_URL` is wired into the GitHub Pages deploy workflow (which only runs on
+`master`) and this is still on its own branch. See
+[`packages/server/README.md`](packages/server/README.md) for deployment details and the full
+list of what's stubbed vs. real.
 
 Delivered as `packages/server` (Fastify + Socket.IO + `node:sqlite` — chosen over
 `better-sqlite3` specifically because it needs no native build step, which this dev machine
@@ -196,11 +201,24 @@ other four rather than deeply integrated into Quick Roll / Character Sheet.
 
 **Deferred**, tracked in the server README: rooms don't survive a server restart (in-memory
 only; only the ledger persists), no reconnect-with-identity on tab reload, Keeper role isn't
-transferable, and — the big one — **nothing is deployed**. GitHub Pages is static-only and
-can't run this; picking a host (Fly.io / Render / a VPS) and paying for it is a decision for
-whoever continues this phase, not something to decide unilaterally mid-session.
+transferable.
 
-Stack used: Node + Fastify, SQLite via `node:sqlite` (no native deps).
+Stack used: Node + Fastify, SQLite via `node:sqlite` (no native deps), deployed on Fly.io.
+
+### Deployment
+
+Server deployed 2026-08-28: Fly.io app `coc7-server`, `iad` region, 1GB volume mounted at
+`/data`, `auto_stop_machines` on (stops when idle, so it isn't running — or billing — between
+sessions; expect a few seconds' cold start on the first connection after a quiet spell). Config
+is [`/fly.toml`](fly.toml) at the repo root (build context has to be the repo root so npm
+workspaces can see `packages/engine`/`packages/protocol`, not `packages/server` alone).
+`COC7_CORS_ORIGIN` is locked to `https://a-yevgeniev.github.io`, the deployed web app's origin
+— verified this actually blocks other origins (tried connecting from the local dev server and
+got a real CORS rejection, not a silent pass). Verified against the live instance: room
+create/join, a public roll broadcasting over an actual WebSocket connection, and that the
+ledger persists across a redeploy (a fresh player joining the same running room correctly saw
+prior rolls) while the in-memory room registry does not (joining after a full redeploy
+correctly fails with "Room not found," matching the documented limitation above — not a bug).
 
 ---
 

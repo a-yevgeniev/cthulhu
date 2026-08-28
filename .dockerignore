@@ -1,0 +1,8 @@
+node_modules
+**/node_modules
+.git
+**/dist
+packages/web/src
+packages/web/public
+packages/web/index.html
+packages/server/*.sqlite*
