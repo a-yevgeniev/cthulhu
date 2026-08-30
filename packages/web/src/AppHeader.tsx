@@ -7,7 +7,7 @@ export default function AppHeader({ title }: { title: string }) {
   const { locale, setLocale } = useLocale();
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink-line/80 bg-ink/80 px-4 py-3 backdrop-blur-md">
+    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-ink-line/80 bg-ink/80 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-md">
       <h1 className="font-display text-lg tracking-wide text-paper">{title}</h1>
       <div className="flex overflow-hidden border border-ink-line text-[11px]">
         {LOCALES.map((l) => (

@@ -46,10 +46,10 @@ function AppShell() {
   return (
     <div className="flex min-h-svh flex-col bg-transparent">
       <AppHeader title={tabLabels[tabId]} />
-      <div className="flex-1 pb-24">
+      <div className="flex-1 pb-4">
         <Active />
       </div>
-      <nav className="fixed inset-x-0 bottom-0 flex border-t border-ink-line/80 bg-ink/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+      <nav className="sticky bottom-0 flex border-t border-ink-line/80 bg-ink/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
         {TAB_IDS.map((id) => {
           const Icon = TAB_ICONS[id];
           const active = tabId === id;
