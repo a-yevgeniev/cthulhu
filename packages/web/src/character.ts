@@ -233,6 +233,31 @@ export const PREGEN_TEMPLATES: PregenTemplate[] = [
     },
     weapon: { skillKey: 'firearmsHandgun', damage: '1d10' },
   },
+  {
+    key: 'rasmusDolk',
+    characteristics: { STR: 80, CON: 60, SIZ: 50, DEX: 70, APP: 50, INT: 50, POW: 60, EDU: 40 },
+    age: 36,
+    luck: 50,
+    skillOverrides: {
+      fightingBrawl: 70,
+      creditRating: 20,
+      intimidate: 35,
+      libraryUse: 50,
+      disguise: 60,
+      artCraft: 60,
+      languageOwn: 40,
+      stealth: 40,
+      fastTalk: 60,
+      spotHidden: 50,
+      law: 40,
+      psychology: 60,
+      mechanicalRepair: 30,
+      listen: 40,
+      firearmsHandgun: 40,
+      dodge: 30,
+    },
+    weapon: { skillKey: 'firearmsHandgun', damage: '1d10' },
+  },
 ];
 
 interface PregenFlavor {

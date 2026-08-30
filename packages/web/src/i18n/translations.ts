@@ -412,6 +412,14 @@ export const en: Translations = {
       inventory: ['Badge', 'Handcuffs'],
       weaponName: '.38 Revolver',
     },
+    rasmusDolk: {
+      name: 'Rasmus Dolk',
+      occupation: 'Private Detective',
+      notes:
+        "A Boston private eye with a worn coat and even wearier eyes, hired onto a case that started as a missing-persons job and stopped making sense somewhere around the second week. He doesn't believe in ghosts. He's starting to wonder if that's still true.",
+      inventory: ['Notebook and pen', 'Lucky ring'],
+      weaponName: '.38 Revolver',
+    },
   },
   table: {
     title: 'Table',
@@ -598,6 +606,14 @@ export const uk: Translations = {
       occupation: 'Поліцейський детектив',
       notes: 'Три заяви про зникнення людей пов\'язані з однією адресою за два роки. Він перестав називати це збігом.',
       inventory: ['Значок', 'Наручники'],
+      weaponName: 'Револьвер .38',
+    },
+    rasmusDolk: {
+      name: 'Расмус Дольк',
+      occupation: 'Приватний детектив',
+      notes:
+        'Бостонський приватний детектив у потертому пальті й з ще втомленішими очима — узявся за справу, що починалася як пошук зниклої людини, а десь на другому тижні перестала мати сенс. У привидів він не вірить. Починає сумніватися, чи це досі так.',
+      inventory: ['Блокнот і ручка', 'Щаслива каблучка'],
       weaponName: 'Револьвер .38',
     },
   },
