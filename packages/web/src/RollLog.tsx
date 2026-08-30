@@ -4,6 +4,7 @@ import { useRollLog, type LogEntry, type SkillLogEntry } from './RollLogContext'
 import { rollDisplay } from './successLevel';
 import { useLocale } from './i18n/LocaleContext';
 import type { Translations } from './i18n/translations';
+import EldritchMark from './EldritchMark';
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -42,6 +43,7 @@ function SkillEntryCard({ entry, t }: { entry: SkillLogEntry; t: Translations })
 
       <div className="flex items-baseline gap-3">
         <span className={`font-display text-3xl tabular-nums ${style.textClass}`}>{result.roll}</span>
+        {result.level === 'fumble' && <EldritchMark size={22} className="shrink-0 text-oxblood" />}
         <span className={`text-[10px] font-semibold uppercase tracking-[.12em] ${style.textClass}`}>
           {style.label}
         </span>

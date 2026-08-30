@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useCharacters } from './CharacterContext';
 import { useLocale } from './i18n/LocaleContext';
 import { PREGEN_TEMPLATES, type Investigator } from './character';
+import CompassRose from './CompassRose';
 
 function exportCharacter(investigator: Investigator) {
   const blob = new Blob([JSON.stringify(investigator, null, 2)], { type: 'application/json' });
@@ -101,7 +102,10 @@ export default function CharacterList({ onOpen }: { onOpen: (id: string) => void
       )}
 
       {characters.length === 0 && (
-        <p className="pt-12 text-center text-sm text-paper-dim">{t.characters.empty}</p>
+        <div className="flex flex-col items-center pt-8">
+          <CompassRose size={160} className="text-brass opacity-20" />
+          <p className="-mt-6 text-center text-sm text-paper-dim">{t.characters.empty}</p>
+        </div>
       )}
 
       <div className="flex flex-col">

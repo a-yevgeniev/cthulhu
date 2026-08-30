@@ -11,6 +11,7 @@ import { useRollLog } from './RollLogContext';
 import { useLocale } from './i18n/LocaleContext';
 import Die, { TOTAL_ANIMATION_MS } from './Die';
 import ThresholdTrack from './ThresholdTrack';
+import EldritchMark from './EldritchMark';
 
 const DIFFICULTIES: Difficulty[] = ['regular', 'hard', 'extreme'];
 
@@ -142,10 +143,16 @@ export default function QuickRoll() {
 
         {result && style && (
           <div
-            className={`text-center transition-all duration-300 ${
+            className={`relative text-center transition-all duration-300 ${
               revealed ? 'opacity-100' : 'translate-y-2 opacity-0'
             }`}
           >
+            {isFumble && (
+              <EldritchMark
+                size={140}
+                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-oxblood opacity-25"
+              />
+            )}
             <div
               className={`font-display text-7xl leading-none ${style.textClass} ${
                 isFumble ? 'result-fracture' : ''

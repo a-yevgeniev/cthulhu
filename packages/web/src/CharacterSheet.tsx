@@ -16,6 +16,8 @@ import { useLocale } from './i18n/LocaleContext';
 import type { Translations } from './i18n/translations';
 import { damageNotation, makeId, type CharacterSkill, type CharacterWeapon, type Investigator } from './character';
 import Die from './Die';
+import SunburstDivider from './SunburstDivider';
+import EldritchMark from './EldritchMark';
 
 /** Ordered to match the two-column characteristics table on the official Chaosium/Geekach
  * Ukrainian sheet (see the Legal note in CLAUDE.md): left column top-to-bottom, then right. */
@@ -72,6 +74,7 @@ function RollBadge({ result, t, spinKey }: { result: SkillRollResult; t: Transla
   return (
     <span className="flex items-center gap-2">
       <Die value={result.roll} sides={100} spinKey={spinKey} size="sm" />
+      {result.level === 'fumble' && <EldritchMark size={20} className="shrink-0 text-oxblood" />}
       <span className={`text-[10px] font-semibold uppercase tracking-wider ${style.textClass}`}>
         {style.label}
       </span>
@@ -319,6 +322,8 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
         </div>
       </div>
 
+      <SunburstDivider />
+
       <div>
         <h2 className={`mb-2 ${LABEL}`}>{t.sheet.skills}</h2>
         <div className="flex flex-col">
@@ -402,6 +407,8 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
           </button>
         </div>
       </div>
+
+      <SunburstDivider />
 
       <div>
         <h2 className={`mb-2 ${LABEL}`}>{t.sheet.weapons}</h2>
@@ -524,6 +531,8 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
         </div>
       </div>
 
+      <SunburstDivider />
+
       <div>
         <h2 className={`mb-2 ${LABEL}`}>{t.sheet.inventory}</h2>
         <div className="flex flex-wrap gap-2">
@@ -568,6 +577,8 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
           </button>
         </div>
       </div>
+
+      <SunburstDivider />
 
       <div>
         <h2 className={`mb-2 ${LABEL}`}>{t.sheet.notes}</h2>
