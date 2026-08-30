@@ -446,6 +446,13 @@ export const en: Translations = {
       inventory: ['Notebook and pen', 'Lucky ring'],
       weaponName: '.38 Revolver',
     },
+    graduate: {
+      name: 'Eleanor Vance',
+      occupation: 'Recent Graduate',
+      notes:
+        "Still finishing her father's last paper — he vanished on an expedition to South America two years ago, and she's never quite accepted that the case is closed. She's certain there's a rational explanation for everything. She's about to test that certainty.",
+      inventory: ['Notebook', "Father's old pen"],
+    },
   },
   table: {
     title: 'Table',
@@ -568,14 +575,14 @@ export const uk: Translations = {
     derivedHeading: 'Похідні характеристики',
     derived: (build, damageBonus, move) =>
       `Статура ${build} · Бонус шкоди ${damageBonus} · Швидкість ${move}`,
-    hp: 'ОЗ',
-    mp: 'ОМ',
-    san: 'Розсудок',
-    luck: 'Удача',
-    sanityCheck: 'Перевірка розсудку',
+    hp: "Очки здоров'я",
+    mp: 'Очки магії',
+    san: 'Глузд',
+    luck: 'Талан',
+    sanityCheck: 'Перевірка глузду',
     sanLossPlaceholder: '1/1d6',
     check: 'Перевірити',
-    startingSan: (n) => `Початковий розсудок ${n}`,
+    startingSan: (n) => `Початковий глузд ${n}`,
     lostThisSession: (n) => `Втрачено за сесію: ${n}`,
     setStartingToCurrent: 'Початковий = поточний',
     resetSession: 'Скинути сесію',
@@ -586,7 +593,7 @@ export const uk: Translations = {
     removeSkill: (name) => `Видалити ${name}`,
     weapons: 'Зброя',
     weaponNamePlaceholder: 'Назва зброї',
-    weaponSkillPlaceholder: 'Навичка (напр. Бійка (Рукопашний бій))',
+    weaponSkillPlaceholder: 'Навичка (напр. Бій (рукопашний))',
     weaponDamagePlaceholder: 'Шкода (напр. 1d6)',
     newWeaponPlaceholder: 'Назва нової зброї',
     removeWeapon: (name) => `Видалити ${name}`,
@@ -642,6 +649,13 @@ export const uk: Translations = {
         'Бостонський приватний детектив у потертому пальті й з ще втомленішими очима — узявся за справу, що починалася як пошук зниклої людини, а десь на другому тижні перестала мати сенс. У привидів він не вірить. Починає сумніватися, чи це досі так.',
       inventory: ['Блокнот і ручка', 'Щаслива каблучка'],
       weaponName: 'Револьвер .38',
+    },
+    graduate: {
+      name: 'Елеонора Венс',
+      occupation: 'Випускниця',
+      notes:
+        "Досі дописує останню статтю батька — він зник під час експедиції до Південної Америки два роки тому, і вона й досі не змирилася, що справу закрито. Вона переконана: усьому є раціональне пояснення. Зараз це переконання буде випробуване.",
+      inventory: ['Блокнот', 'Батькове перо'],
     },
   },
   table: {

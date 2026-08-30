@@ -262,6 +262,27 @@ export const PREGEN_TEMPLATES: PregenTemplate[] = [
     },
     weapon: { skillKey: 'firearmsHandgun', damage: '1d10' },
   },
+  {
+    key: 'graduate',
+    characteristics: { STR: 60, CON: 50, SIZ: 50, DEX: 40, APP: 60, INT: 80, POW: 50, EDU: 70 },
+    age: 24,
+    luck: 60,
+    skillOverrides: {
+      archaeology: 50,
+      fightingBrawl: 45,
+      creditRating: 25,
+      history: 60,
+      throwSkill: 40,
+      libraryUse: 60,
+      climb: 30,
+      languageOther: 40,
+      languageOwn: 70,
+      persuade: 50,
+      spotHidden: 45,
+      listen: 70,
+      dodge: 40,
+    },
+  },
 ];
 
 interface PregenFlavor {
