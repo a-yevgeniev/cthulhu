@@ -117,6 +117,9 @@ export interface Translations {
   };
   /** Localized display names for the default 7e skill list, keyed by the stable skill key. */
   skills: Record<string, string>;
+  /** Localized abbreviations for the eight characteristics (STR/CON/SIZ/DEX/APP/INT/POW/EDU),
+   * keyed by the English abbreviation used throughout the engine and Investigator data. */
+  characteristicNames: Record<string, string>;
   /** Flavor text for the ready-made investigators (character.ts's PREGEN_TEMPLATES), keyed the
    * same way. Original archetypes — see the Legal note in CLAUDE.md and the comment above
    * PREGEN_TEMPLATES for why these aren't lifted from a published scenario. */
@@ -210,6 +213,17 @@ const enSkills: Record<string, string> = {
   track: 'Track',
 };
 
+const enCharacteristicNames: Record<string, string> = {
+  STR: 'STR',
+  CON: 'CON',
+  SIZ: 'SIZ',
+  DEX: 'DEX',
+  APP: 'APP',
+  INT: 'INT',
+  POW: 'POW',
+  EDU: 'EDU',
+};
+
 const ukSkills: Record<string, string> = {
   accounting: 'Бухгалтерія',
   anthropology: 'Антропологія',
@@ -258,6 +272,17 @@ const ukSkills: Record<string, string> = {
   swim: 'Плавання',
   throwSkill: 'Кидання',
   track: 'Вистежування',
+};
+
+const ukCharacteristicNames: Record<string, string> = {
+  STR: 'СИЛ',
+  CON: 'СТА',
+  SIZ: 'РОЗ',
+  DEX: 'СПР',
+  APP: 'ПРИ',
+  INT: 'ІНТ',
+  POW: 'ВОЛ',
+  EDU: 'ОСВ',
 };
 
 export const en: Translations = {
@@ -376,6 +401,7 @@ export const en: Translations = {
     notes: 'Notes',
   },
   skills: enSkills,
+  characteristicNames: enCharacteristicNames,
   pregens: {
     doctor: {
       name: 'Dr. Elena Voss',
@@ -573,6 +599,7 @@ export const uk: Translations = {
     notes: 'Нотатки',
   },
   skills: ukSkills,
+  characteristicNames: ukCharacteristicNames,
   pregens: {
     doctor: {
       name: 'Др. Елена Восс',

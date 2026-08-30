@@ -17,7 +17,9 @@ import type { Translations } from './i18n/translations';
 import { damageNotation, makeId, type CharacterSkill, type CharacterWeapon, type Investigator } from './character';
 import Die from './Die';
 
-const CHAR_KEYS: (keyof Characteristics)[] = ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU'];
+/** Ordered to match the two-column characteristics table on the official Chaosium/Geekach
+ * Ukrainian sheet (see the Legal note in CLAUDE.md): left column top-to-bottom, then right. */
+const CHAR_KEYS: (keyof Characteristics)[] = ['STR', 'CON', 'DEX', 'INT', 'SIZ', 'POW', 'APP', 'EDU'];
 
 const LABEL = 'text-[10px] uppercase tracking-widest text-paper-dim';
 const FIELD = 'border border-ink-line bg-transparent text-paper placeholder:text-paper-dim/60 focus:border-brass focus:outline-none';
@@ -216,7 +218,7 @@ export default function CharacterSheet({ id, onBack }: { id: string; onBack: () 
         <div className="flex flex-col">
           {CHAR_KEYS.map((key) => (
             <div key={key} className="flex items-center gap-2 border-b border-ink-line/60 py-2">
-              <span className={`w-9 ${LABEL}`}>{key}</span>
+              <span className={`w-9 ${LABEL}`}>{t.characteristicNames[key]}</span>
               <input
                 type="number"
                 value={investigator.characteristics[key]}
