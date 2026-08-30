@@ -453,6 +453,13 @@ export const en: Translations = {
         "Still finishing her father's last paper — he vanished on an expedition to South America two years ago, and she's never quite accepted that the case is closed. She's certain there's a rational explanation for everything. She's about to test that certainty.",
       inventory: ['Notebook', "Father's old pen"],
     },
+    maxHurst: {
+      name: 'Maximilian Hurst',
+      occupation: 'Parapsychologist',
+      notes:
+        "A Great War veteran who came home with more questions than answers — something he saw in an abandoned French church never left him. He's spent every year since chasing the inexplicable as a self-styled parapsychologist, camera always loaded, still waiting for the one photograph that proves he isn't imagining it.",
+      inventory: ['Camera and film', "Ghost-hunter's kit"],
+    },
   },
   table: {
     title: 'Table',
@@ -656,6 +663,13 @@ export const uk: Translations = {
       notes:
         "Досі дописує останню статтю батька — він зник під час експедиції до Південної Америки два роки тому, і вона й досі не змирилася, що справу закрито. Вона переконана: усьому є раціональне пояснення. Зараз це переконання буде випробуване.",
       inventory: ['Блокнот', 'Батькове перо'],
+    },
+    maxHurst: {
+      name: 'Максиміліан Герст',
+      occupation: 'Парапсихолог',
+      notes:
+        'Ветеран Великої війни, який повернувся додому з більшою кількістю запитань, ніж відповідей, — те, що він побачив у покинутій французькій церкві, не відпускає його й досі. Відтоді щороку він ганяється за незбагненним як самопроголошений парапсихолог, завжди з зарядженим фотоапаратом, усе ще чекаючи на той єдиний знімок, що доведе: йому не привиділося.',
+      inventory: ['Фотоапарат і плівка', 'Набір мисливця за привидами'],
     },
   },
   table: {
