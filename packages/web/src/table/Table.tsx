@@ -8,6 +8,8 @@ import { damageNotation, type CharacterWeapon } from '../character';
 import { rollDisplay } from '../successLevel';
 import Die from '../Die';
 import DiceGroups from '../DiceGroups';
+import CompassRose from '../CompassRose';
+import EldritchMark from '../EldritchMark';
 
 const LABEL = 'text-[10px] uppercase tracking-widest text-paper-dim';
 const FIELD =
@@ -40,6 +42,7 @@ function ConnectForm() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
+      <CompassRose size={120} className="mx-auto text-brass opacity-25" />
       <div className="flex gap-2">
         <button
           type="button"
@@ -144,6 +147,7 @@ function EntryRow({ entry, t }: { entry: LedgerEntry; t: ReturnType<typeof useLo
     body = (
       <div className="flex items-center gap-3">
         <Die value={skillResult.roll} sides={100} spinKey={0} size="sm" />
+        {skillResult.level === 'fumble' && <EldritchMark size={20} className="shrink-0 text-oxblood" />}
         <div>
           <div className="text-sm text-paper">{entry.label}</div>
           <div className={`text-[10px] font-semibold uppercase tracking-wider ${style.textClass}`}>

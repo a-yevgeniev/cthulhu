@@ -5,6 +5,7 @@ import { rollDisplay } from './successLevel';
 import { useLocale } from './i18n/LocaleContext';
 import type { Translations } from './i18n/translations';
 import EldritchMark from './EldritchMark';
+import CompassRose from './CompassRose';
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -118,7 +119,10 @@ export default function RollLog() {
       )}
 
       {entries.length === 0 && (
-        <p className="pt-12 text-center text-sm text-paper-dim">{t.rollLog.empty}</p>
+        <div className="flex flex-col items-center pt-8">
+          <CompassRose size={160} className="text-brass opacity-20" />
+          <p className="-mt-6 text-center text-sm text-paper-dim">{t.rollLog.empty}</p>
+        </div>
       )}
 
       <div className="flex flex-col">
