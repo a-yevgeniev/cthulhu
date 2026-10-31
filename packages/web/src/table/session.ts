@@ -45,6 +45,60 @@ function write(key: string, value: string): void {
 export const rememberedName = () => read(NAME_KEY) ?? '';
 export const rememberName = (name: string) => write(NAME_KEY, name);
 
+/** Where this device last was in a room, so a reload (or a phone coming back from sleep) puts the
+ * player back in it as the same person instead of at the join form. `token` is the secret the
+ * server issued on entry; it never leaves this device except to the server. */
+export interface TableSession {
+  roomCode: string;
+  playerId: string;
+  token: string;
+}
+
+const SESSION_KEY = 'coc7-table-session';
+
+export function savedSession(): TableSession | null {
+  const raw = read(SESSION_KEY);
+  if (!raw) return null;
+  try {
+    const s = JSON.parse(raw) as Partial<TableSession>;
+    return typeof s.roomCode === 'string' && typeof s.playerId === 'string' && typeof s.token === 'string'
+      ? { roomCode: s.roomCode, playerId: s.playerId, token: s.token }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export const saveSession = (session: TableSession) => write(SESSION_KEY, JSON.stringify(session));
+
+export function clearSession(): void {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // nothing stored, or storage unavailable
+  }
+}
+
+/** Which investigator this device plays at the table; survives leaving a room and reloads. */
+const CHARACTER_KEY = 'coc7-table-character';
+export const rememberedCharacterId = () => read(CHARACTER_KEY) || null;
+export function rememberCharacterId(id: string | null): void {
+  if (id) write(CHARACTER_KEY, id);
+  else
+    try {
+      localStorage.removeItem(CHARACTER_KEY);
+    } catch {
+      // not remembered; harmless
+    }
+}
+
+/** Whether a collapsible section of the room page was left open. */
+export function rememberedSectionOpen(id: string, fallback: boolean): boolean {
+  const stored = read(`coc7-table-section-${id}`);
+  return stored === null ? fallback : stored === '1';
+}
+export const rememberSectionOpen = (id: string, open: boolean) => write(`coc7-table-section-${id}`, open ? '1' : '0');
+
 /** '' means the player last chose a free table with no scenario. */
 export const rememberedScenario = () => read(SCENARIO_KEY);
 export const rememberScenario = (scenario: string) => write(SCENARIO_KEY, scenario);

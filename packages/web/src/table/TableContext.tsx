@@ -4,16 +4,28 @@ import {
   SOCKET_EVENTS,
   type CreateRoomResponse,
   type JoinRoomResponse,
-  type HandoutState,
+  type ResumeRoomResponse,
+  type HandoutChange,
   type LedgerEntry,
   type MusicState,
   type Player,
   type RollAck,
   type RollPrompt,
+  type ShownHandout,
   type SetHandoutAck,
   type SetMusicAck,
+  type TakenCharactersResponse,
 } from 'coc7-protocol';
 import type { Difficulty } from 'coc7-engine';
+import {
+  clearSession,
+  inviteCodeFromUrl,
+  rememberCharacterId,
+  rememberedCharacterId,
+  saveSession,
+  savedSession,
+  type TableSession,
+} from './session';
 
 // The shared-table server is a separate long-running process from this static site — it
 // cannot run on GitHub Pages. Point this at wherever coc7-server is actually deployed; for
@@ -35,29 +47,45 @@ interface TableState {
   music: MusicState | null;
   /** The prepared scenario this room was opened for (e.g. "haunting"), if any. */
   scenario: string | null;
-  /** Id of the handout image the Keeper is showing the table right now, if any. */
-  handoutId: string | null;
+  /** The handout images the Keeper has up for the table right now, in the order shown. */
+  handouts: ShownHandout[];
   /** Which local Investigator (CharacterContext) this player is playing at the table, if any —
    * purely a client-side convenience so the roll composer can offer that character's own
    * skills/weapons instead of manual entry every time. The server only ever sees a name. */
   selectedCharacterId: string | null;
+  /** The room this device is being put back into after a reload, while that's in flight. */
+  resumeCode: string | null;
+  /** In a room whose connection dropped and is being retried; the room stays on screen. */
+  reconnecting: boolean;
+  /** The last attempt to get back into a room failed because the room is gone (say, the server
+   * restarted): the join form explains why it's showing. */
+  resumeFailed: boolean;
 }
 
 interface TableContextValue extends TableState {
   createRoom: (name: string, scenario?: string) => void;
-  joinRoom: (roomCode: string, name: string) => void;
+  joinRoom: (roomCode: string, name: string, characterKey: string) => void;
+  /** Which investigators are already at that room's table (null if it can't be asked). */
+  fetchTakenCharacters: (roomCode: string) => Promise<string[] | null>;
   leaveRoom: () => void;
   selectCharacter: (id: string | null) => void;
   rollSkill: (args: { skill: number; label?: string; difficulty?: Difficulty; modifierDice?: number; secret?: boolean }) => void;
   rollNotation: (args: { notation: string; label?: string; secret?: boolean }) => void;
-  rollSanity: (args: { sanity: number; startingSanity?: number; lostThisSession?: number; loss: string; secret?: boolean }) => void;
+  /** `onEntry` gets the recorded result once the server has rolled it, so the caller can apply the
+   * Sanity loss to its own investigator. */
+  rollSanity: (
+    args: { sanity: number; startingSanity?: number; lostThisSession?: number; loss: string; secret?: boolean },
+    onEntry?: (entry: LedgerEntry) => void,
+  ) => void;
   requestRoll: (args: { targetPlayerId: string; skillLabel: string; difficulty?: Difficulty; modifierDice?: number }) => void;
   /** Keeper only (the server rejects anyone else). Applies locally at once so the controls feel
    * instant, and relays to the room at a throttled rate so dragging a volume slider doesn't
    * flood the socket. */
   setMusic: (music: MusicState) => void;
-  /** Keeper only (the server rejects anyone else): show a handout to everyone, or null to hide. */
-  setHandout: (imageId: string | null) => void;
+  /** Keeper only (the server rejects anyone else): put a handout up for everyone (a bundled one by
+   * id, or an upload with its picture), take one down, or take them all down. Applies locally at
+   * once. */
+  changeHandouts: (change: HandoutChange) => void;
   dismissPrompt: () => void;
   clearError: () => void;
 }
@@ -75,20 +103,82 @@ const initialState: TableState = {
   prompt: null,
   music: null,
   scenario: null,
-  handoutId: null,
+  handouts: [],
   selectedCharacterId: null,
+  resumeCode: null,
+  reconnecting: false,
+  resumeFailed: false,
 };
+
+/** The same step the server applies, so the Keeper's own screen and everyone else's agree. */
+function applyHandoutChange(shown: ShownHandout[], change: HandoutChange): ShownHandout[] {
+  if (change.type === 'clear') return [];
+  if (change.type === 'hide') return shown.filter((h) => h.id !== change.id);
+  const at = shown.findIndex((h) => h.id === change.item.id);
+  if (at < 0) return [...shown, change.item];
+  return shown.map((h, i) => (i === at ? change.item : h));
+}
 
 /** Minimum gap between music updates sent to the server while a control is being dragged. */
 const MUSIC_EMIT_INTERVAL_MS = 120;
 
+type Entered = Extract<JoinRoomResponse, { ok: true }>;
+
 export function TableProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<TableState>(initialState);
+  const [state, setState] = useState<TableState>(() => ({ ...initialState, selectedCharacterId: rememberedCharacterId() }));
   const socketRef = useRef<Socket | null>(null);
+  /** Who this device is in the room it's in (or was just in): what to present to the server to be
+   * put back after a reload or a dropped connection. Null when not in a room. */
+  const sessionRef = useRef<TableSession | null>(null);
+
+  /** The server let us in (created, joined, or resumed): take its picture of the room as ours and
+   * remember how to get back. */
+  function enterRoom(res: Entered) {
+    sessionRef.current = { roomCode: res.roomCode, playerId: res.playerId, token: res.resumeToken };
+    saveSession(sessionRef.current);
+    setState((s) => ({
+      ...s,
+      status: 'connected',
+      reconnecting: false,
+      resumeCode: null,
+      resumeFailed: false,
+      error: null,
+      roomCode: res.roomCode,
+      playerId: res.playerId,
+      isKeeper: res.isKeeper,
+      players: res.players,
+      ledger: res.ledger,
+      music: res.music,
+      scenario: res.scenario,
+      handouts: res.handout.shown,
+    }));
+  }
+
+  /** The server doesn't know us any more (it restarted, or the room is gone). */
+  function dropSession() {
+    sessionRef.current = null;
+    clearSession();
+    setState((s) => ({ ...initialState, selectedCharacterId: s.selectedCharacterId, resumeFailed: true }));
+  }
 
   function ensureSocket(): Socket {
     if (socketRef.current) return socketRef.current;
     const socket = io(SERVER_URL, { autoConnect: true });
+    // Fires on the first connection and on every automatic reconnection (a phone waking up, the
+    // network coming back). A fresh socket knows nobody, so if we were in a room, say who we are.
+    socket.on('connect', () => {
+      const session = sessionRef.current;
+      if (!session) return;
+      socket.emit(SOCKET_EVENTS.resumeRoom, session, (res: ResumeRoomResponse) => {
+        if (res.ok) enterRoom(res);
+        else dropSession();
+      });
+    });
+    socket.on('disconnect', (reason) => {
+      // A deliberate leave (client disconnect) is handled by leaveRoom; anything else is a drop
+      // that socket.io is already retrying.
+      if (sessionRef.current && reason !== 'io client disconnect') setState((s) => ({ ...s, reconnecting: true }));
+    });
     socket.on(SOCKET_EVENTS.playersChanged, (players: Player[]) => {
       setState((s) => ({ ...s, players }));
     });
@@ -101,63 +191,76 @@ export function TableProvider({ children }: { children: ReactNode }) {
     socket.on(SOCKET_EVENTS.musicState, (music: MusicState) => {
       setState((s) => ({ ...s, music }));
     });
-    socket.on(SOCKET_EVENTS.handoutState, (handout: HandoutState) => {
-      setState((s) => ({ ...s, handoutId: handout.imageId }));
+    socket.on(SOCKET_EVENTS.handoutChange, (change: HandoutChange) => {
+      setState((s) => ({ ...s, handouts: applyHandoutChange(s.handouts, change) }));
     });
     socket.on('connect_error', () => {
+      // In a room (or on the way back into one) the connection is simply being retried — keep the
+      // room on screen with a "reconnecting" note instead of throwing the player back to the form.
+      if (sessionRef.current) {
+        setState((s) => ({ ...s, reconnecting: true }));
+        return;
+      }
       setState((s) => ({ ...s, status: 'disconnected', error: `Could not reach the table server at ${SERVER_URL}.` }));
     });
     socketRef.current = socket;
     return socket;
   }
 
-  useEffect(() => () => void socketRef.current?.disconnect(), []);
+  // On load, go back to the room this device was last in. An invite link to a *different* room
+  // means the player came here to join that one instead, so leave the old session alone.
+  useEffect(() => {
+    const saved = savedSession();
+    const invite = inviteCodeFromUrl();
+    if (saved && (!invite || invite === saved.roomCode)) {
+      sessionRef.current = saved;
+      setState((s) => ({ ...s, status: 'connecting', resumeCode: saved.roomCode }));
+      ensureSocket();
+    }
+    return () => {
+      socketRef.current?.disconnect();
+      // StrictMode runs this cleanup and then the effect again: the next run needs a live socket.
+      socketRef.current = null;
+    };
+  }, []);
 
   const createRoom = useCallback((name: string, scenario?: string) => {
-    setState((s) => ({ ...s, status: 'connecting', error: null }));
+    setState((s) => ({ ...s, status: 'connecting', error: null, resumeFailed: false }));
     const socket = ensureSocket();
     socket.emit(SOCKET_EVENTS.createRoom, { name, scenario }, (res: CreateRoomResponse) => {
       if (!res.ok) {
         setState((s) => ({ ...s, status: 'disconnected', error: res.error }));
         return;
       }
-      setState((s) => ({
-        ...s,
-        status: 'connected',
-        roomCode: res.roomCode,
-        playerId: res.playerId,
-        isKeeper: true,
-        players: res.players,
-        ledger: res.ledger,
-        music: res.music,
-        scenario: res.scenario,
-        handoutId: res.handout.imageId,
-      }));
+      enterRoom(res);
     });
   }, []);
 
-  const joinRoom = useCallback((roomCode: string, name: string) => {
-    setState((s) => ({ ...s, status: 'connecting', error: null }));
+  const joinRoom = useCallback((roomCode: string, name: string, characterKey: string) => {
+    setState((s) => ({ ...s, status: 'connecting', error: null, resumeFailed: false }));
     const socket = ensureSocket();
-    socket.emit(SOCKET_EVENTS.joinRoom, { roomCode, name }, (res: JoinRoomResponse) => {
+    socket.emit(SOCKET_EVENTS.joinRoom, { roomCode, name, characterKey }, (res: JoinRoomResponse) => {
       if (!res.ok) {
         setState((s) => ({ ...s, status: 'disconnected', error: res.error }));
         return;
       }
-      setState((s) => ({
-        ...s,
-        status: 'connected',
-        roomCode: res.roomCode,
-        playerId: res.playerId,
-        isKeeper: res.isKeeper,
-        players: res.players,
-        ledger: res.ledger,
-        music: res.music,
-        scenario: res.scenario,
-        handoutId: res.handout.imageId,
-      }));
+      enterRoom(res);
     });
   }, []);
+
+  const fetchTakenCharacters = useCallback(
+    (roomCode: string) =>
+      new Promise<string[] | null>((resolve) => {
+        const socket = ensureSocket();
+        // Never leave the join form waiting: no answer is as good as "unknown".
+        const timer = window.setTimeout(() => resolve(null), 4000);
+        socket.emit(SOCKET_EVENTS.takenCharacters, { roomCode }, (res: TakenCharactersResponse) => {
+          window.clearTimeout(timer);
+          resolve(res.ok ? res.taken : null);
+        });
+      }),
+    [],
+  );
 
   const musicEmit = useRef<{ timer: number | null; lastSent: number; pending: MusicState | null }>({
     timer: null,
@@ -168,6 +271,9 @@ export function TableProvider({ children }: { children: ReactNode }) {
   const leaveRoom = useCallback(() => {
     if (musicEmit.current.timer !== null) window.clearTimeout(musicEmit.current.timer);
     musicEmit.current = { timer: null, lastSent: 0, pending: null };
+    // Leaving on purpose: forget the room so a reload doesn't pull the player back into it.
+    sessionRef.current = null;
+    clearSession();
     socketRef.current?.disconnect();
     socketRef.current = null;
     // Keep the character selection — the player is still the same person, likely to rejoin
@@ -176,6 +282,7 @@ export function TableProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const selectCharacter = useCallback((id: string | null) => {
+    rememberCharacterId(id);
     setState((s) => ({ ...s, selectedCharacterId: id }));
   }, []);
 
@@ -200,8 +307,9 @@ export function TableProvider({ children }: { children: ReactNode }) {
   );
 
   const rollSanity = useCallback<TableContextValue['rollSanity']>(
-    (args) => guardedEmit<RollAck>(SOCKET_EVENTS.rollSanity, args, (res) => {
-      if (!res.ok) setState((s) => ({ ...s, error: res.error }));
+    (args, onEntry) => guardedEmit<RollAck>(SOCKET_EVENTS.rollSanity, args, (res) => {
+      if (res.ok) onEntry?.(res.entry);
+      else setState((s) => ({ ...s, error: res.error }));
     }),
     [state.roomCode, state.playerId],
   );
@@ -235,11 +343,16 @@ export function TableProvider({ children }: { children: ReactNode }) {
     [state.roomCode, state.playerId],
   );
 
-  const setHandout = useCallback<TableContextValue['setHandout']>(
-    (imageId) => {
-      setState((s) => ({ ...s, handoutId: imageId }));
-      guardedEmit<SetHandoutAck>(SOCKET_EVENTS.handoutSet, { imageId }, (res) => {
-        if (!res.ok) setState((s) => ({ ...s, error: res.error }));
+  const changeHandouts = useCallback<TableContextValue['changeHandouts']>(
+    (change) => {
+      setState((s) => ({ ...s, handouts: applyHandoutChange(s.handouts, change) }));
+      guardedEmit<SetHandoutAck>(SOCKET_EVENTS.handoutSet, { change }, (res) => {
+        if (!res.ok) {
+          // The server refused (say, too many up already), so the screen mustn't keep claiming it.
+          const undo: HandoutChange | null =
+            change.type === 'show' ? { type: 'hide', id: change.item.id } : null;
+          setState((s) => ({ ...s, error: res.error, handouts: undo ? applyHandoutChange(s.handouts, undo) : s.handouts }));
+        }
       });
     },
     [state.roomCode, state.playerId],
@@ -254,6 +367,7 @@ export function TableProvider({ children }: { children: ReactNode }) {
         ...state,
         createRoom,
         joinRoom,
+        fetchTakenCharacters,
         leaveRoom,
         selectCharacter,
         rollSkill,
@@ -261,7 +375,7 @@ export function TableProvider({ children }: { children: ReactNode }) {
         rollSanity,
         requestRoll,
         setMusic,
-        setHandout,
+        changeHandouts,
         dismissPrompt,
         clearError,
       }}

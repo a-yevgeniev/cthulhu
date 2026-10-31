@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { MusicState } from 'coc7-protocol';
 import { useLocale } from '../i18n/LocaleContext';
 import { useTable } from './TableContext';
+import Section from './Section';
 import { BRASS_BTN, FIELD, GHOST_BTN, LABEL } from './styles';
 import {
   MUSIC_PLAYLIST_ID,
@@ -210,18 +211,20 @@ function KeeperMusic() {
   const loading = !loadError && tracks.length === 0;
 
   return (
-    <div className="flex flex-col gap-3 border border-ink-line px-4 py-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className={LABEL}>{t.table.music}</h2>
-        <a
-          href={MUSIC_PLAYLIST_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="text-[10px] uppercase tracking-wider text-paper-dim transition-colors hover:text-brass"
-        >
-          {t.table.musicPlaylistLink}
-        </a>
-      </div>
+    <Section
+      id="music"
+      title={t.table.music}
+      summary={music ? `${music.playing ? '▶ ' : '❚❚ '}${music.title || t.table.musicNothing}` : undefined}
+      keepMounted
+    >
+      <a
+        href={MUSIC_PLAYLIST_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="self-end text-[10px] uppercase tracking-wider text-paper-dim transition-colors hover:text-brass"
+      >
+        {t.table.musicPlaylistLink}
+      </a>
 
       <div ref={hostRef} className="aspect-video w-full overflow-hidden bg-ink-raised [&_iframe]:h-full [&_iframe]:w-full" />
 
@@ -267,7 +270,7 @@ function KeeperMusic() {
 
       {loadError && <p className="text-sm text-oxblood">{t.table.musicLoadError}</p>}
       {trackError && <p className="text-sm text-oxblood">{t.table.musicTrackError}</p>}
-    </div>
+    </Section>
   );
 }
 

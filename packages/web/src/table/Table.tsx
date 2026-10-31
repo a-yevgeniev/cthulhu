@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { derivedStats, type Difficulty } from 'coc7-engine';
+import { useEffect, useState } from 'react';
+import { derivedStats, type Difficulty, type SanityRollResult } from 'coc7-engine';
 import type { LedgerEntry } from 'coc7-protocol';
 import { useTable } from './TableContext';
 import { useLocale } from '../i18n/LocaleContext';
@@ -11,6 +11,8 @@ import DiceGroups from '../DiceGroups';
 import CompassRose from '../CompassRose';
 import EldritchMark from '../EldritchMark';
 import MusicPanel from './MusicPanel';
+import RollPicker from './RollPicker';
+import Section from './Section';
 import { HandoutCue, HandoutDisplay, HandoutLibrary } from './HandoutPanels';
 import { SCENARIO_IDS, isScenarioId, type ScenarioId } from './handouts';
 import {
@@ -25,7 +27,8 @@ import { BRASS_BTN, FIELD, GHOST_BTN, LABEL } from './styles';
 
 function ConnectForm() {
   const { t } = useLocale();
-  const { status, error, createRoom, joinRoom, clearError, selectCharacter, selectedCharacterId } = useTable();
+  const { status, error, resumeFailed, createRoom, joinRoom, fetchTakenCharacters, clearError, selectCharacter, selectedCharacterId } =
+    useTable();
   const { characters, createPregenCharacter } = useCharacters();
   // Arriving from an invite link means the player wants to join that room, not make a new one.
   const [inviteCode] = useState(inviteCodeFromUrl);
@@ -41,15 +44,33 @@ function ConnectForm() {
 
   const connecting = status === 'connecting';
 
-  // Ready-made investigators this room offers that the player hasn't taken yet. Making a room
-  // for a scenario offers that scenario's; joining one offers every scenario's, since the
-  // player doesn't know which scenario the room was opened for until they're in it.
+  // Ready-made investigators the player can take that they haven't taken yet. Joining offers every
+  // scenario's, since the player doesn't know which scenario the room was opened for until they're in.
   const readyMade = PREGEN_TEMPLATES.filter(
-    (p) =>
-      p.scenarios?.some((s) => (mode === 'create' ? s === scenario : true)) &&
-      !characters.some((c) => c.pregenKey === p.key),
+    (p) => p.scenarios && p.scenarios.length > 0 && !characters.some((c) => c.pregenKey === p.key),
   );
   const PREGEN_PREFIX = 'pregen:';
+
+  // Which investigators the room's table already has, so they can be greyed out before anyone
+  // taps them. The server refuses a taken one regardless; this just saves the round trip.
+  const [taken, setTaken] = useState<string[]>([]);
+  useEffect(() => {
+    const code = roomCode.trim();
+    if (mode !== 'join' || code.length < 4) {
+      setTaken([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void fetchTakenCharacters(code).then((keys) => {
+        if (!cancelled) setTaken(keys ?? []);
+      });
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [mode, roomCode, fetchTakenCharacters]);
 
   function handleSelectCharacter(value: string) {
     clearError();
@@ -63,19 +84,25 @@ function ConnectForm() {
     selectCharacter(value || null);
   }
 
-  // Playing as a character means the character's name is the player's name — there's nothing to
-  // type. Only a guest enters one (and only a guest's typed name is remembered for next time).
+  // Players always come as an investigator, whose name is the player's name — there's nothing to
+  // type, and no playing as a guest. The Keeper plays no investigator and just gives a name.
   const selectedCharacter = characters.find((c) => c.id === selectedCharacterId);
-  const playerName = selectedCharacter ? selectedCharacter.name.trim() || t.characters.unnamed : name.trim();
+  const selectedKey = selectedCharacter ? (selectedCharacter.pregenKey ?? selectedCharacter.id) : null;
+  const selectedTaken = selectedKey !== null && taken.includes(selectedKey);
+  const characterName = selectedCharacter ? selectedCharacter.name.trim() || t.characters.unnamed : '';
+  const noChoices = characters.length === 0 && readyMade.length === 0;
+
+  const canSubmit =
+    mode === 'create' ? name.trim() !== '' : roomCode.trim() !== '' && selectedKey !== null && !selectedTaken;
 
   function submit() {
-    if (!playerName) return;
-    if (!selectedCharacter) rememberName(playerName);
+    if (!canSubmit) return;
     if (mode === 'create') {
+      rememberName(name.trim());
       rememberScenario(scenario);
-      createRoom(playerName, scenario || undefined);
-    } else {
-      joinRoom(roomCode.trim(), playerName);
+      createRoom(name.trim(), scenario || undefined);
+    } else if (selectedKey) {
+      joinRoom(roomCode.trim(), characterName, selectedKey);
     }
   }
 
@@ -103,30 +130,42 @@ function ConnectForm() {
         </button>
       </div>
 
-      {(characters.length > 0 || readyMade.length > 0) && (
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL}>{t.table.playAs}</span>
-          <select
-            value={selectedCharacterId ?? ''}
-            onChange={(e) => handleSelectCharacter(e.target.value)}
-            className={`${FIELD} px-4 py-3 text-sm`}
-          >
-            <option value="">{t.table.guestOption}</option>
-            {characters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name.trim() || t.characters.unnamed}
-              </option>
-            ))}
-            {readyMade.map((p) => (
-              <option key={p.key} value={PREGEN_PREFIX + p.key}>
-                {t.pregens[p.key].name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+      {mode === 'join' &&
+        (noChoices ? (
+          <p className="text-sm text-paper-dim">{t.table.noCharacters}</p>
+        ) : (
+          <label className="flex flex-col gap-1.5">
+            <span className={LABEL}>{t.table.playAs}</span>
+            <select
+              value={selectedCharacter && !selectedTaken ? selectedCharacter.id : ''}
+              onChange={(e) => handleSelectCharacter(e.target.value)}
+              className={`${FIELD} px-4 py-3 text-sm`}
+            >
+              <option value="">{t.table.chooseCharacter}</option>
+              {characters.map((c) => {
+                const isTaken = taken.includes(c.pregenKey ?? c.id);
+                return (
+                  <option key={c.id} value={c.id} disabled={isTaken}>
+                    {c.name.trim() || t.characters.unnamed}
+                    {isTaken ? ` — ${t.table.characterTaken}` : ''}
+                  </option>
+                );
+              })}
+              {readyMade.map((p) => {
+                const isTaken = taken.includes(p.key);
+                return (
+                  <option key={p.key} value={PREGEN_PREFIX + p.key} disabled={isTaken}>
+                    {t.pregens[p.key].name}
+                    {isTaken ? ` — ${t.table.characterTaken}` : ''}
+                  </option>
+                );
+              })}
+            </select>
+            {selectedTaken && <span className="text-xs text-oxblood">{t.table.characterTakenNote(characterName)}</span>}
+          </label>
+        ))}
 
-      {!selectedCharacter && (
+      {mode === 'create' && (
         <label className="flex flex-col gap-1.5">
           <span className={LABEL}>{t.table.yourName}</span>
           <input
@@ -179,12 +218,13 @@ function ConnectForm() {
         </label>
       )}
 
+      {resumeFailed && !error && <p className="text-sm text-paper-dim">{t.table.resumeFailed}</p>}
       {error && <p className="text-sm text-oxblood">{error}</p>}
 
       <button
         type="button"
         onClick={submit}
-        disabled={connecting || !playerName || (mode === 'join' && !roomCode.trim())}
+        disabled={connecting || !canSubmit}
         className={`${BRASS_BTN} py-4 text-xs font-semibold uppercase tracking-[.28em]`}
       >
         {connecting ? t.table.connecting : mode === 'create' ? t.table.create : t.table.join}
@@ -216,10 +256,18 @@ function EntryRow({ entry, t }: { entry: LedgerEntry; t: ReturnType<typeof useLo
         <Die value={skillResult.roll} sides={100} spinKey={0} size="sm" />
         {skillResult.level === 'fumble' && <EldritchMark size={20} className="shrink-0 text-oxblood" />}
         <div>
-          <div className="text-sm text-paper">{entry.label}</div>
+          <div className="text-sm text-paper">{entry.kind === 'sanity' ? t.sheet.sanityCheck : entry.label}</div>
           <div className={`text-[10px] font-semibold uppercase tracking-wider ${style.textClass}`}>
             {style.label}
           </div>
+          {entry.kind === 'sanity' && (
+            <div className="mt-0.5 text-xs text-paper-dim">
+              {t.table.sanityOutcome(
+                (entry.result as SanityRollResult).loss,
+                (entry.result as SanityRollResult).sanityAfter,
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -241,9 +289,10 @@ function EntryRow({ entry, t }: { entry: LedgerEntry; t: ReturnType<typeof useLo
 
 function RollComposer() {
   const { t } = useLocale();
-  const { rollSkill, rollNotation, selectedCharacterId } = useTable();
-  const { characters } = useCharacters();
-  const character = characters.find((c) => c.id === selectedCharacterId);
+  const { rollSkill, rollNotation, rollSanity, selectedCharacterId, isKeeper } = useTable();
+  const { characters, updateCharacter } = useCharacters();
+  // The Keeper plays no investigator, whatever was last chosen on this device.
+  const character = isKeeper ? undefined : characters.find((c) => c.id === selectedCharacterId);
   const [tab, setTab] = useState<'skill' | 'notation'>('skill');
   const [label, setLabel] = useState('');
   const [skillValue, setSkillValue] = useState(50);
@@ -261,12 +310,36 @@ function RollComposer() {
     }
   }
 
-  function pickCharacterSkill(skillId: string) {
-    const skill = character?.skills.find((s) => s.id === skillId);
-    if (!skill) return;
-    setTab('skill');
-    setLabel(skill.name);
-    setSkillValue(skill.value);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  function rollCharacterValue(label: string, value: number) {
+    rollSkill({ skill: value, label, difficulty, secret });
+    // Close so the result, which lands just below the dice, is what's on screen.
+    setPickerOpen(false);
+  }
+
+  function checkSanity(loss: string, sanitySecret: boolean) {
+    if (!character) return;
+    const { id } = character;
+    rollSanity(
+      {
+        sanity: character.currentSan,
+        startingSanity: character.startingSan,
+        lostThisSession: character.sanLostThisSession,
+        loss,
+        secret: sanitySecret,
+      },
+      // The server rolled it; the investigator on this device takes the loss, as on the sheet.
+      (entry) => {
+        const result = entry.result as SanityRollResult;
+        updateCharacter(id, (c) => ({
+          ...c,
+          currentSan: result.sanityAfter,
+          sanLostThisSession: c.sanLostThisSession + result.loss,
+        }));
+      },
+    );
+    setPickerOpen(false);
   }
 
   function rollWeaponAttack(weapon: CharacterWeapon) {
@@ -298,18 +371,29 @@ function RollComposer() {
           <span className="text-[10px] uppercase tracking-widest text-brass">
             {t.table.fromCharacter}: {character.name.trim() || t.characters.unnamed}
           </span>
-          <select
-            value=""
-            onChange={(e) => pickCharacterSkill(e.target.value)}
-            className={`${FIELD} px-3 py-2 text-sm`}
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            aria-haspopup="dialog"
+            className={`${FIELD} flex min-h-11 items-center justify-between gap-3 px-3 py-2 text-left text-sm`}
           >
-            <option value="">{t.table.pickSkillPlaceholder}</option>
-            {character.skills.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.value})
-              </option>
-            ))}
-          </select>
+            <span>{t.table.pickSkillPlaceholder}</span>
+            <span aria-hidden="true" className="text-brass">
+              ›
+            </span>
+          </button>
+          {pickerOpen && (
+            <RollPicker
+              character={character}
+              difficulty={difficulty}
+              onDifficulty={setDifficulty}
+              secret={secret}
+              onSecret={setSecret}
+              onRollValue={rollCharacterValue}
+              onSanityCheck={checkSanity}
+              onClose={() => setPickerOpen(false)}
+            />
+          )}
           {character.weapons.length > 0 && (
             <div className="flex flex-col gap-1.5">
               {character.weapons.map((w) => (
@@ -434,8 +518,7 @@ function KeeperRequestPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-2 border border-ink-line px-4 py-3">
-      <h2 className={LABEL}>{t.table.requestRollHeading}</h2>
+    <Section id="request" title={t.table.requestRollHeading} defaultOpen>
       <div className="flex gap-2">
         <select
           value={targetId}
@@ -460,6 +543,38 @@ function KeeperRequestPanel() {
           {t.table.requestRollSend}
         </button>
       </div>
+    </Section>
+  );
+}
+
+/** The newest rolls, right under the dice so a roll's result is where the eye already is. Older
+ * ones are a tap away. */
+const RECENT_ROLLS = 3;
+
+function RecentRolls() {
+  const { t } = useLocale();
+  const { ledger } = useTable();
+  const [all, setAll] = useState(false);
+
+  if (ledger.length === 0) return <p className="py-2 text-center text-sm text-paper-dim">{t.table.empty}</p>;
+
+  const shown = all ? ledger : ledger.slice(-RECENT_ROLLS);
+  return (
+    <div className="flex flex-col" aria-live="polite">
+      <div className="flex flex-col-reverse">
+        {shown.map((entry) => (
+          <EntryRow key={entry.id} entry={entry} t={t} />
+        ))}
+      </div>
+      {ledger.length > RECENT_ROLLS && (
+        <button
+          type="button"
+          onClick={() => setAll((v) => !v)}
+          className="self-center py-2 text-[11px] uppercase tracking-wider text-paper-dim transition-colors hover:text-brass"
+        >
+          {all ? t.table.rollsShowFewer : t.table.rollsShowAll(ledger.length)}
+        </button>
+      )}
     </div>
   );
 }
@@ -502,10 +617,15 @@ function InviteButton({ roomCode }: { roomCode: string }) {
 
 function RoomView() {
   const { t } = useLocale();
-  const { roomCode, scenario, isKeeper, players, ledger, leaveRoom, prompt, dismissPrompt } = useTable();
+  const { roomCode, scenario, isKeeper, players, reconnecting, leaveRoom, prompt, dismissPrompt } = useTable();
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
+      {reconnecting && (
+        <p role="status" className="border border-oxblood/70 px-4 py-2 text-center text-xs uppercase tracking-wider text-oxblood">
+          {t.table.reconnecting}
+        </p>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div>
           <span className={LABEL}>{t.table.roomLabel}</span>
@@ -549,28 +669,36 @@ function RoomView() {
       </div>
 
       <RollComposer />
+      <RecentRolls />
       {isKeeper && <KeeperRequestPanel />}
       {isKeeper && <HandoutLibrary />}
       <MusicPanel />
-
-      <div>
-        {ledger.length === 0 ? (
-          <p className="pt-6 text-center text-sm text-paper-dim">{t.table.empty}</p>
-        ) : (
-          <div className="flex flex-col-reverse">
-            {ledger.map((entry) => (
-              <EntryRow key={entry.id} entry={entry} t={t} />
-            ))}
-          </div>
-        )}
-      </div>
 
       <HandoutDisplay />
     </div>
   );
 }
 
+/** Shown while a reload is being put back into its room, instead of flashing the join form. */
+function ResumeScreen({ roomCode }: { roomCode: string }) {
+  const { t } = useLocale();
+  const { leaveRoom } = useTable();
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center gap-6 px-4 py-10 text-center">
+      <CompassRose size={120} className="text-brass opacity-25" />
+      <p role="status" className="text-sm text-paper-dim">
+        {t.table.resuming(roomCode)}
+      </p>
+      <button type="button" onClick={leaveRoom} className="text-[11px] uppercase tracking-wider text-oxblood/80 transition-colors hover:text-oxblood">
+        {t.table.leaveRoom}
+      </button>
+    </div>
+  );
+}
+
 export default function Table() {
-  const { status } = useTable();
-  return status === 'connected' ? <RoomView /> : <ConnectForm />;
+  const { status, resumeCode } = useTable();
+  if (status === 'connected') return <RoomView />;
+  if (status === 'connecting' && resumeCode) return <ResumeScreen roomCode={resumeCode} />;
+  return <ConnectForm />;
 }

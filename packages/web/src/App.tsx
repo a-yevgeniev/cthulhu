@@ -5,7 +5,7 @@ import RollLog from './RollLog';
 import CharactersTab from './CharactersTab';
 import AppHeader from './AppHeader';
 import Table from './table/Table';
-import { inviteCodeFromUrl } from './table/session';
+import { inviteCodeFromUrl, savedSession } from './table/session';
 import { RollLogProvider } from './RollLogContext';
 import { CharacterProvider } from './CharacterContext';
 import { TableProvider } from './table/TableContext';
@@ -33,8 +33,9 @@ const TAB_ICONS: Record<TabId, React.ComponentType<{ className?: string }>> = {
 
 function AppShell() {
   const { t } = useLocale();
-  // An invite link (?room=CODE) opens straight on the Table tab, join form filled in.
-  const [tabId, setTabId] = useState<TabId>(() => (inviteCodeFromUrl() ? 'table' : 'quick'));
+  // An invite link (?room=CODE) opens straight on the Table tab, join form filled in; so does a
+  // reload while still in a room (the Table tab is where it puts the player back).
+  const [tabId, setTabId] = useState<TabId>(() => (inviteCodeFromUrl() || savedSession() ? 'table' : 'quick'));
   const Active = SCREENS[tabId];
 
   const tabLabels: Record<TabId, string> = {

@@ -30,6 +30,16 @@ production). `COC7_CORS_ORIGIN` restricts which origin may connect — set in `f
 
 - Room creation with a short, read-aloud-friendly join code (`makeRoomCode` excludes 0/O/1/I).
 - The room creator is the Keeper; everyone else who joins is a Player.
+- Players join as an investigator (`characterKey`: a ready-made one's key, or the id of one they
+  made) — there is no joining as a guest. Only one *connected* player may hold a given
+  investigator; a second join is refused. A holder who drops off frees it (their stale entry makes
+  way for whoever takes it next), and `room:taken` lists the held ones so a join form can grey
+  them out. The Keeper plays no investigator.
+- `room:resume` — after a reload or a dropped connection the client sends the room code, its
+  player id and the `resumeToken` it was given on create/join, and gets the same payload as a
+  join, as the same player (same role, same ledger view). Both must match: ids are public to the
+  room, tokens are not. A disconnect only marks a player away; the room keeps them, so this works
+  as long as the server process stays up. After a restart the room is gone and resuming fails.
 - `roll:skill` / `roll:notation` / `roll:sanity` — the client sends parameters, the server
   calls the engine and is the single source of truth for the result. A `secret: true` roll (or
   a Sanity check, which defaults to secret) broadcasts only to the roller and the Keeper.
@@ -41,6 +51,16 @@ production). `COC7_CORS_ORIGIN` restricts which origin may connect — set in `f
   join responses so late joiners start in step. No audio ever touches the server — each client
   plays the video through YouTube's embedded player. Not persisted: like the room itself it
   doesn't survive a restart.
+- `handout:set` — the Keeper alone chooses which images the whole table sees, up to six at once.
+  One step per message: `show` an image, `hide` one by id, or `clear` them all. An image is either
+  one of the web app's bundled handouts, by slug id, or one the Keeper uploaded: a
+  `data:image/(jpeg|png|webp);base64,…` URL of at most 700,000 characters (SVG is refused — it can
+  carry script), shrunk by the Keeper's client. Uploaded images are never stored ahead of time:
+  they sit on the Keeper's device and are sent only when shown, held in the room's memory while on
+  display, and dropped the moment the Keeper hides them. The validated step is relayed to the room
+  as `handout:change`, and the full list is replayed in the create/join responses for late
+  joiners. The Socket.IO message limit is set explicitly (1,000,000 bytes); a bigger message drops
+  that one connection and nothing else.
 - The ledger replays to a player on join, filtered to what they're allowed to see.
 
 ## Known limitations (this is a first vertical slice of Phase 4, not the full plan)

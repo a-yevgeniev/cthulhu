@@ -151,15 +151,30 @@ export interface Translations {
     send: string;
     empty: string;
     promptFrom: (keeperName: string, skillLabel: string) => string;
+    resuming: (roomCode: string) => string;
+    resumeFailed: string;
+    reconnecting: string;
+    rollsShowAll: (count: number) => string;
+    rollsShowFewer: string;
     dismiss: string;
     requestRollHeading: string;
     requestRollTarget: string;
     requestRollSkillPlaceholder: string;
     requestRollSend: string;
     playAs: string;
-    guestOption: string;
+    chooseCharacter: string;
+    characterTaken: string;
+    characterTakenNote: (name: string) => string;
+    noCharacters: string;
     fromCharacter: string;
     pickSkillPlaceholder: string;
+    skillsSearch: string;
+    skillsNoMatch: string;
+    drawerClose: string;
+    sanityOutcome: (loss: number, after: number) => string;
+    sanityCurrent: (current: number, max: number) => string;
+    sanityPlainRoll: string;
+    sanityCommonLosses: string;
     music: string;
     musicPickTrack: string;
     musicLoading: string;
@@ -181,8 +196,15 @@ export interface Translations {
     handoutShownLabel: string;
     handoutShow: string;
     handoutHide: string;
+    handoutHideAll: string;
     handoutOnDisplay: string;
     handoutBelow: string;
+    handoutAdd: string;
+    handoutRemove: string;
+    handoutTitleLabel: string;
+    handoutUploadNote: string;
+    handoutUploadFailed: string;
+    handoutLibraryFull: string;
   };
   /** Display names for the prepared scenarios a room can be opened for (see table/handouts.ts). */
   scenarios: Record<string, string>;
@@ -519,15 +541,30 @@ export const en: Translations = {
     send: 'Roll',
     empty: 'No rolls yet.',
     promptFrom: (keeperName, skillLabel) => `${keeperName} asks for ${skillLabel}`,
+    resuming: (roomCode) => `Returning to room ${roomCode}…`,
+    resumeFailed: 'Your previous room has ended — the table server was restarted. Create a new room or join again.',
+    reconnecting: 'Connection lost — reconnecting…',
+    rollsShowAll: (count) => `Show all (${count})`,
+    rollsShowFewer: 'Show fewer',
     dismiss: 'Dismiss',
     requestRollHeading: 'Request a roll',
     requestRollTarget: 'Player',
     requestRollSkillPlaceholder: 'Skill name',
     requestRollSend: 'Ask',
     playAs: 'Play as',
-    guestOption: '— Guest (custom name) —',
+    chooseCharacter: '— Choose an investigator —',
+    characterTaken: 'already at the table',
+    characterTakenNote: (name) => `${name} is already at this table. Choose another investigator.`,
+    noCharacters: 'Create an investigator on the Characters tab first, then come back to join.',
     fromCharacter: 'From character',
     pickSkillPlaceholder: 'Pick a skill…',
+    skillsSearch: 'Search skills',
+    skillsNoMatch: 'No skill matches.',
+    drawerClose: 'Close',
+    sanityOutcome: (loss, after) => (loss > 0 ? `Sanity −${loss} → ${after}` : `No Sanity lost · ${after}`),
+    sanityCurrent: (current, max) => `Sanity ${current} / ${max}`,
+    sanityPlainRoll: 'Sanity roll',
+    sanityCommonLosses: 'Common losses',
     music: 'Music',
     musicPickTrack: 'Pick a track…',
     musicLoading: 'Loading playlist…',
@@ -549,16 +586,36 @@ export const en: Translations = {
     handoutShownLabel: 'Handout',
     handoutShow: 'Show to players',
     handoutHide: 'Hide',
+    handoutHideAll: 'Hide all',
     handoutOnDisplay: 'On display',
     handoutBelow: 'Handout shown below ↓',
+    handoutAdd: 'Add image',
+    handoutRemove: 'Remove',
+    handoutTitleLabel: 'Image title',
+    handoutUploadNote:
+      'Images you add stay on this device. Players only receive one while you are showing it — hide it and it is gone from the room.',
+    handoutUploadFailed: "Couldn't use that image. Try a JPEG, PNG or WebP file.",
+    handoutLibraryFull: 'Your image shelf is full. Remove one to add another.',
   },
   scenarios: {
     haunting: 'The Haunting',
   },
   handouts: {
-    'the-eye-sign': {
-      title: 'The Eye Sign',
+    'cult-symbol': {
+      title: 'The cult symbol',
       alt: 'An eye inside a triangle whose corners fork into branching arms.',
+    },
+    basement: {
+      title: 'Basement',
+      alt: 'Hand-drawn floor plan of the basement: one large room with a stair and a partitioned corner.',
+    },
+    'first-floor': {
+      title: 'First floor',
+      alt: 'Hand-drawn floor plan of the first floor: a row of rooms along a corridor, with two staircases.',
+    },
+    'second-floor': {
+      title: 'Second floor',
+      alt: 'Hand-drawn floor plan of the second floor: three large rooms in a row and a staircase.',
     },
   },
 };
@@ -769,15 +826,30 @@ export const uk: Translations = {
     send: 'Кинути',
     empty: 'Ще немає кидків.',
     promptFrom: (keeperName, skillLabel) => `${keeperName} просить ${skillLabel}`,
+    resuming: (roomCode) => `Повертаємось до кімнати ${roomCode}…`,
+    resumeFailed: 'Попередню кімнату закрито — сервер столу перезапустили. Створіть нову кімнату або приєднайтеся знову.',
+    reconnecting: "З'єднання втрачено — відновлюємо…",
+    rollsShowAll: (count) => `Показати всі (${count})`,
+    rollsShowFewer: 'Показати менше',
     dismiss: 'Приховати',
     requestRollHeading: 'Запросити кидок',
     requestRollTarget: 'Гравець',
     requestRollSkillPlaceholder: 'Назва навички',
     requestRollSend: 'Запросити',
     playAs: 'Грати за',
-    guestOption: '— Гість (власне ім\'я) —',
+    chooseCharacter: '— Оберіть персонажа —',
+    characterTaken: 'вже за столом',
+    characterTakenNote: (name) => `${name} уже за цим столом. Оберіть іншого персонажа.`,
+    noCharacters: 'Спершу створіть персонажа на вкладці «Персонажі», а потім приєднайтеся.',
     fromCharacter: 'Від персонажа',
     pickSkillPlaceholder: 'Обрати навичку…',
+    skillsSearch: 'Пошук навички',
+    skillsNoMatch: 'Нічого не знайдено.',
+    drawerClose: 'Закрити',
+    sanityOutcome: (loss, after) => (loss > 0 ? `Глузд −${loss} → ${after}` : `Глузд не втрачено · ${after}`),
+    sanityCurrent: (current, max) => `Глузд ${current} / ${max}`,
+    sanityPlainRoll: 'Кидок Глузду',
+    sanityCommonLosses: 'Типові втрати',
     music: 'Музика',
     musicPickTrack: 'Обрати трек…',
     musicLoading: 'Завантаження плейлиста…',
@@ -799,16 +871,36 @@ export const uk: Translations = {
     handoutShownLabel: 'Матеріал',
     handoutShow: 'Показати гравцям',
     handoutHide: 'Сховати',
+    handoutHideAll: 'Сховати все',
     handoutOnDisplay: 'Показано',
     handoutBelow: 'Матеріал показано нижче ↓',
+    handoutAdd: 'Додати зображення',
+    handoutRemove: 'Видалити',
+    handoutTitleLabel: 'Назва зображення',
+    handoutUploadNote:
+      'Додані зображення зберігаються лише на цьому пристрої. Гравці отримують зображення тільки поки ви його показуєте — сховайте, і воно зникне з кімнати.',
+    handoutUploadFailed: 'Не вдалося використати це зображення. Спробуйте JPEG, PNG або WebP.',
+    handoutLibraryFull: 'Полицю зображень заповнено. Видаліть одне, щоб додати інше.',
   },
   scenarios: {
     haunting: 'Привиддя',
   },
   handouts: {
-    'the-eye-sign': {
-      title: 'Знак Ока',
+    'cult-symbol': {
+      title: 'Символ культу',
       alt: 'Око всередині трикутника, кути якого розгалужуються на гілчасті промені.',
+    },
+    basement: {
+      title: 'Підвал',
+      alt: 'Накреслений від руки план підвалу: одна велика кімната зі сходами та відгородженим кутом.',
+    },
+    'first-floor': {
+      title: 'Перший поверх',
+      alt: 'Накреслений від руки план першого поверху: ряд кімнат уздовж коридору, двоє сходів.',
+    },
+    'second-floor': {
+      title: 'Другий поверх',
+      alt: 'Накреслений від руки план другого поверху: три великі кімнати в ряд і сходи.',
     },
   },
 };

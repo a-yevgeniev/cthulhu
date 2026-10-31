@@ -4,6 +4,8 @@ import type { Difficulty, DiceRollResult, SanityRollResult, SkillRollResult } fr
 export const SOCKET_EVENTS = {
   createRoom: 'room:create',
   joinRoom: 'room:join',
+  resumeRoom: 'room:resume',
+  takenCharacters: 'room:taken',
   playersChanged: 'room:players',
   rollSkill: 'roll:skill',
   rollNotation: 'roll:notation',
@@ -14,7 +16,7 @@ export const SOCKET_EVENTS = {
   musicSet: 'music:set',
   musicState: 'music:state',
   handoutSet: 'handout:set',
-  handoutState: 'handout:state',
+  handoutChange: 'handout:change',
 } as const;
 
 export interface Player {
@@ -22,6 +24,9 @@ export interface Player {
   name: string;
   isKeeper: boolean;
   connected: boolean;
+  /** Which investigator this player is at the table (a ready-made one's key, or the id of one they
+   * made). Only one connected player may hold a given investigator. Absent for the Keeper. */
+  characterKey?: string;
 }
 
 export type RollKind = 'skill' | 'notation' | 'sanity';
@@ -68,19 +73,45 @@ export type SetMusicAck = { ok: true } | { ok: false; error: string };
 
 // ---------------------------------------------------------------- handouts
 
+/** An image the Keeper brought themselves (say, a map cropped from their own copy of a
+ * scenario). It only ever exists on the Keeper's device and, while it's on display, in the room's
+ * memory — the server never keeps one that isn't being shown. */
+export interface HandoutImage {
+  /** Keeper's own label for it; used as the image's alt text, never as a visible caption. */
+  title: string;
+  /** A `data:image/(jpeg|png|webp);base64,…` URL, already shrunk by the Keeper's client. */
+  dataUrl: string;
+}
+
+/** One image on display: a bundled handout (`id` is its slug, `upload` is null — the image is part
+ * of the web app, not sent over the wire) or a Keeper-uploaded one (`id` is the Keeper's own id for
+ * it, `upload` carries the picture). */
+export interface ShownHandout {
+  id: string;
+  upload: HandoutImage | null;
+}
+
 /**
- * The image the Keeper is currently showing the table, or none. Images aren't sent over the
- * wire: the web app bundles a library of handouts per scenario and this is just which one (by
- * its id) is on display, so a late joiner sees it too and nobody but the Keeper can change it.
+ * Everything the Keeper is currently showing the table, in the order they were put up. Any number
+ * can be up at once (the server caps it). Late joiners are sent this too, and nobody but the
+ * Keeper can change it.
  */
 export interface HandoutState {
-  imageId: string | null;
+  shown: ShownHandout[];
 }
+
+/** One step in the Keeper's handout display: put one up (showing one that's already up leaves it
+ * where it is), take one down, or take everything down. The server checks it, applies it, and
+ * relays the same shape to the room as `handout:change`. */
+export type HandoutChange =
+  | { type: 'show'; item: ShownHandout }
+  | { type: 'hide'; id: string }
+  | { type: 'clear' };
 
 export interface SetHandoutRequest {
   roomCode: string;
   playerId: string;
-  imageId: string | null;
+  change: HandoutChange;
 }
 
 export type SetHandoutAck = { ok: true } | { ok: false; error: string };
@@ -98,6 +129,8 @@ export type CreateRoomResponse =
       roomCode: string;
       playerId: string;
       isKeeper: true;
+      /** Secret that lets this player come back to the room as themself (see `room:resume`). */
+      resumeToken: string;
       players: Player[];
       ledger: LedgerEntry[];
       music: MusicState | null;
@@ -110,14 +143,27 @@ export type CreateRoomResponse =
 
 export interface JoinRoomRequest {
   roomCode: string;
+  /** The investigator's name. */
   name: string;
+  /** Which investigator is being played (see `Player.characterKey`). Required: there's no playing
+   * as a guest, and the server refuses one that another connected player already holds. */
+  characterKey: string;
 }
+
+/** Which investigators are already taken in a room, so a join form can grey them out before
+ * anyone tries. */
+export interface TakenCharactersRequest {
+  roomCode: string;
+}
+export type TakenCharactersResponse = { ok: true; taken: string[] } | { ok: false; error: string };
 export type JoinRoomResponse =
   | {
       ok: true;
       roomCode: string;
       playerId: string;
       isKeeper: boolean;
+      /** Secret that lets this player come back to the room as themself (see `room:resume`). */
+      resumeToken: string;
       players: Player[];
       ledger: LedgerEntry[];
       music: MusicState | null;
@@ -125,6 +171,19 @@ export type JoinRoomResponse =
       handout: HandoutState;
     }
   | { ok: false; error: string };
+
+// ---------------------------------------------------------------- room:resume
+
+/** Come back to a room after a reload or a dropped connection, as the same player (same id, same
+ * role, same view of the ledger). `token` is the `resumeToken` from the original create/join —
+ * player ids are visible to the whole room, so the id alone must never be enough. Answered with
+ * the same payload as a join. */
+export interface ResumeRoomRequest {
+  roomCode: string;
+  playerId: string;
+  token: string;
+}
+export type ResumeRoomResponse = JoinRoomResponse;
 
 // ------------------------------------------------------------------- rolling
 
