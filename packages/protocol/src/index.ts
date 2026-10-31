@@ -11,6 +11,10 @@ export const SOCKET_EVENTS = {
   rollBroadcast: 'roll:new',
   requestRoll: 'roll:request',
   rollPrompt: 'roll:prompt',
+  musicSet: 'music:set',
+  musicState: 'music:state',
+  handoutSet: 'handout:set',
+  handoutState: 'handout:state',
 } as const;
 
 export interface Player {
@@ -36,13 +40,70 @@ export interface LedgerEntry {
   result: SkillRollResult | DiceRollResult | SanityRollResult;
 }
 
+// ---------------------------------------------------------------- background music
+
+/**
+ * What the room is listening to, set by the Keeper and followed by every client. The audio
+ * itself is a YouTube embed each client runs locally — the server only relays this small state,
+ * never any audio. There is no playback position: ambience loops, so a client that joins late
+ * (or starts a moment after the others) just starts the track from the top.
+ */
+export interface MusicState {
+  /** YouTube video id (11 characters of [A-Za-z0-9_-]). */
+  videoId: string;
+  /** Display name for the "now playing" line; purely cosmetic. */
+  title: string;
+  playing: boolean;
+  /** Master volume, 0-100. Some platforms (iOS) ignore it and use the hardware volume. */
+  volume: number;
+}
+
+export interface SetMusicRequest {
+  roomCode: string;
+  playerId: string;
+  music: MusicState;
+}
+
+export type SetMusicAck = { ok: true } | { ok: false; error: string };
+
+// ---------------------------------------------------------------- handouts
+
+/**
+ * The image the Keeper is currently showing the table, or none. Images aren't sent over the
+ * wire: the web app bundles a library of handouts per scenario and this is just which one (by
+ * its id) is on display, so a late joiner sees it too and nobody but the Keeper can change it.
+ */
+export interface HandoutState {
+  imageId: string | null;
+}
+
+export interface SetHandoutRequest {
+  roomCode: string;
+  playerId: string;
+  imageId: string | null;
+}
+
+export type SetHandoutAck = { ok: true } | { ok: false; error: string };
+
 // ---------------------------------------------------------------- room:create
 
 export interface CreateRoomRequest {
   name: string;
+  /** Which prepared scenario this room is for (e.g. "haunting"); omitted for an open table. */
+  scenario?: string;
 }
 export type CreateRoomResponse =
-  | { ok: true; roomCode: string; playerId: string; isKeeper: true; players: Player[]; ledger: LedgerEntry[] }
+  | {
+      ok: true;
+      roomCode: string;
+      playerId: string;
+      isKeeper: true;
+      players: Player[];
+      ledger: LedgerEntry[];
+      music: MusicState | null;
+      scenario: string | null;
+      handout: HandoutState;
+    }
   | { ok: false; error: string };
 
 // ------------------------------------------------------------------ room:join
@@ -52,7 +113,17 @@ export interface JoinRoomRequest {
   name: string;
 }
 export type JoinRoomResponse =
-  | { ok: true; roomCode: string; playerId: string; isKeeper: boolean; players: Player[]; ledger: LedgerEntry[] }
+  | {
+      ok: true;
+      roomCode: string;
+      playerId: string;
+      isKeeper: boolean;
+      players: Player[];
+      ledger: LedgerEntry[];
+      music: MusicState | null;
+      scenario: string | null;
+      handout: HandoutState;
+    }
   | { ok: false; error: string };
 
 // ------------------------------------------------------------------- rolling

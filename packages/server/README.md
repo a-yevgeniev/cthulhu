@@ -35,6 +35,12 @@ production). `COC7_CORS_ORIGIN` restricts which origin may connect — set in `f
   a Sanity check, which defaults to secret) broadcasts only to the roller and the Keeper.
 - `roll:request` — the Keeper asks a specific connected player for a named roll; the target
   gets a `roll:prompt` they can act on from their own sheet.
+- `music:set` — the Keeper alone sets the room's background music (a YouTube video id, title,
+  playing/stopped, volume 0-100). The server validates and clamps every field, keeps it on the
+  in-memory room, and broadcasts `music:state` to everyone; it also rides along in the create/
+  join responses so late joiners start in step. No audio ever touches the server — each client
+  plays the video through YouTube's embedded player. Not persisted: like the room itself it
+  doesn't survive a restart.
 - The ledger replays to a player on join, filtered to what they're allowed to see.
 
 ## Known limitations (this is a first vertical slice of Phase 4, not the full plan)

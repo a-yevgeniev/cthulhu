@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import type { Player } from 'coc7-protocol';
+import type { HandoutState, MusicState, Player } from 'coc7-protocol';
 import { createRoom, roomExists } from './db.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — easy to read aloud
@@ -19,6 +19,12 @@ interface LiveRoom {
   players: Map<string, Player>;
   /** playerId -> socket id, for targeted keeper->player prompts. */
   sockets: Map<string, string>;
+  /** What the Keeper has playing, replayed to anyone who joins. In-memory only, like the room. */
+  music: MusicState | null;
+  /** Which prepared scenario the room was opened for, if any (e.g. "haunting"). */
+  scenario: string | null;
+  /** The handout image the Keeper is currently showing the table. */
+  handout: HandoutState;
 }
 
 const liveRooms = new Map<string, LiveRoom>();
@@ -33,9 +39,16 @@ export function makePlayerId(): string {
   return randomUUID();
 }
 
-export function openRoom(code: string): LiveRoom {
+export function openRoom(code: string, scenario: string | null = null): LiveRoom {
   createRoom(code);
-  const room: LiveRoom = { code, players: new Map(), sockets: new Map() };
+  const room: LiveRoom = {
+    code,
+    players: new Map(),
+    sockets: new Map(),
+    music: null,
+    scenario,
+    handout: { imageId: null },
+  };
   liveRooms.set(code, room);
   return room;
 }

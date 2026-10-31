@@ -160,7 +160,34 @@ export interface Translations {
     guestOption: string;
     fromCharacter: string;
     pickSkillPlaceholder: string;
+    music: string;
+    musicPickTrack: string;
+    musicLoading: string;
+    musicLoadError: string;
+    musicTrackError: string;
+    musicPlay: string;
+    musicStop: string;
+    musicVolume: string;
+    musicMute: string;
+    musicUnmute: string;
+    musicNothing: string;
+    musicTapForSound: string;
+    musicPlaylistLink: string;
+    scenarioLabel: string;
+    scenarioNone: string;
+    inviteLink: string;
+    inviteCopied: string;
+    handoutsHeading: string;
+    handoutShownLabel: string;
+    handoutShow: string;
+    handoutHide: string;
+    handoutOnDisplay: string;
+    handoutBelow: string;
   };
+  /** Display names for the prepared scenarios a room can be opened for (see table/handouts.ts). */
+  scenarios: Record<string, string>;
+  /** Title (shown to the Keeper) and alt text for each handout image, keyed by handout id. */
+  handouts: Record<string, { title: string; alt: string }>;
 }
 
 const enSkills: Record<string, string> = {
@@ -438,8 +465,8 @@ export const en: Translations = {
       inventory: ['Badge', 'Handcuffs'],
       weaponName: '.38 Revolver',
     },
-    rasmusDolk: {
-      name: 'Rasmus Dolk',
+    geralt: {
+      name: 'Geralt of Rivia',
       occupation: 'Private Detective',
       notes:
         "A Boston private eye with a worn coat and even wearier eyes, hired onto a case that started as a missing-persons job and stopped making sense somewhere around the second week. He doesn't believe in ghosts. He's starting to wonder if that's still true.",
@@ -459,6 +486,13 @@ export const en: Translations = {
       notes:
         "A Great War veteran who came home with more questions than answers — something he saw in an abandoned French church never left him. He's spent every year since chasing the inexplicable as a self-styled parapsychologist, camera always loaded, still waiting for the one photograph that proves he isn't imagining it.",
       inventory: ['Camera and film', "Ghost-hunter's kit"],
+    },
+    professor: {
+      name: 'Daniel Whitegarden',
+      occupation: 'University Professor',
+      notes:
+        "A rumpled Boston professor who is never far from a library and has always suspected the world hides more than the textbooks admit. A summons to an old house is his first real chance in years to test that suspicion — and he's promised his wife and daughter he'll be home for supper.",
+      inventory: ['Notebook and fountain pen', 'Whiskey flask'],
     },
   },
   table: {
@@ -494,6 +528,38 @@ export const en: Translations = {
     guestOption: '— Guest (custom name) —',
     fromCharacter: 'From character',
     pickSkillPlaceholder: 'Pick a skill…',
+    music: 'Music',
+    musicPickTrack: 'Pick a track…',
+    musicLoading: 'Loading playlist…',
+    musicLoadError: "Couldn't load the playlist. Check your connection and re-enter the room.",
+    musicTrackError: "This track can't be played here — pick another.",
+    musicPlay: 'Play',
+    musicStop: 'Stop',
+    musicVolume: 'Volume',
+    musicMute: 'Mute for me',
+    musicUnmute: 'Unmute',
+    musicNothing: 'Nothing playing',
+    musicTapForSound: 'Tap to enable sound',
+    musicPlaylistLink: 'Playlist on YouTube',
+    scenarioLabel: 'Scenario',
+    scenarioNone: 'Free table',
+    inviteLink: 'Invite link',
+    inviteCopied: 'Link copied',
+    handoutsHeading: 'Handouts',
+    handoutShownLabel: 'Handout',
+    handoutShow: 'Show to players',
+    handoutHide: 'Hide',
+    handoutOnDisplay: 'On display',
+    handoutBelow: 'Handout shown below ↓',
+  },
+  scenarios: {
+    haunting: 'The Haunting',
+  },
+  handouts: {
+    'the-eye-sign': {
+      title: 'The Eye Sign',
+      alt: 'An eye inside a triangle whose corners fork into branching arms.',
+    },
   },
 };
 
@@ -649,8 +715,8 @@ export const uk: Translations = {
       inventory: ['Значок', 'Наручники'],
       weaponName: 'Револьвер .38',
     },
-    rasmusDolk: {
-      name: 'Расмус Дольк',
+    geralt: {
+      name: 'Ґеральт з Рівії',
       occupation: 'Приватний детектив',
       notes:
         'Бостонський приватний детектив у потертому пальті й з ще втомленішими очима — узявся за справу, що починалася як пошук зниклої людини, а десь на другому тижні перестала мати сенс. У привидів він не вірить. Починає сумніватися, чи це досі так.',
@@ -670,6 +736,13 @@ export const uk: Translations = {
       notes:
         'Ветеран Великої війни, який повернувся додому з більшою кількістю запитань, ніж відповідей, — те, що він побачив у покинутій французькій церкві, не відпускає його й досі. Відтоді щороку він ганяється за незбагненним як самопроголошений парапсихолог, завжди з зарядженим фотоапаратом, усе ще чекаючи на той єдиний знімок, що доведе: йому не привиділося.',
       inventory: ['Фотоапарат і плівка', 'Набір мисливця за привидами'],
+    },
+    professor: {
+      name: 'Даніель Вайтгарден',
+      occupation: 'Університетський професор',
+      notes:
+        "Пом'ятий бостонський професор, якого завжди можна знайти поруч із бібліотекою. Він давно підозрює, що світ приховує більше, ніж визнають підручники. Виклик до старого будинку — його перший за багато років шанс перевірити цю підозру, а вдома на нього чекають дружина й донька.",
+      inventory: ['Блокнот із перовою ручкою', 'Фляжка'],
     },
   },
   table: {
@@ -705,6 +778,38 @@ export const uk: Translations = {
     guestOption: '— Гість (власне ім\'я) —',
     fromCharacter: 'Від персонажа',
     pickSkillPlaceholder: 'Обрати навичку…',
+    music: 'Музика',
+    musicPickTrack: 'Обрати трек…',
+    musicLoading: 'Завантаження плейлиста…',
+    musicLoadError: 'Не вдалося завантажити плейлист. Перевірте з\'єднання й увійдіть до кімнати знову.',
+    musicTrackError: 'Цей трек тут не відтворюється — оберіть інший.',
+    musicPlay: 'Грати',
+    musicStop: 'Стоп',
+    musicVolume: 'Гучність',
+    musicMute: 'Вимкнути в мене',
+    musicUnmute: 'Увімкнути',
+    musicNothing: 'Нічого не грає',
+    musicTapForSound: 'Торкніться, щоб увімкнути звук',
+    musicPlaylistLink: 'Плейлист на YouTube',
+    scenarioLabel: 'Пригода',
+    scenarioNone: 'Вільний стіл',
+    inviteLink: 'Посилання-запрошення',
+    inviteCopied: 'Посилання скопійовано',
+    handoutsHeading: 'Роздаткові матеріали',
+    handoutShownLabel: 'Матеріал',
+    handoutShow: 'Показати гравцям',
+    handoutHide: 'Сховати',
+    handoutOnDisplay: 'Показано',
+    handoutBelow: 'Матеріал показано нижче ↓',
+  },
+  scenarios: {
+    haunting: 'Привиддя',
+  },
+  handouts: {
+    'the-eye-sign': {
+      title: 'Знак Ока',
+      alt: 'Око всередині трикутника, кути якого розгалужуються на гілчасті промені.',
+    },
   },
 };
 

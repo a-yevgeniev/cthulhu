@@ -38,6 +38,9 @@ export interface Investigator {
   weapons: CharacterWeapon[];
   inventory: string[];
   notes: string;
+  /** Set when this investigator was created from a ready-made template (PREGEN_TEMPLATES), so
+   * the Table's "Play as" list doesn't offer the same one again after it's already been taken. */
+  pregenKey?: string;
 }
 
 /** Base chances from the 7e default skill list, keyed by a stable identifier so lookups
@@ -145,11 +148,15 @@ export interface PregenTemplate {
   skillOverrides: Record<string, number>;
   luck: number;
   weapon?: { skillKey: string; damage: string };
+  /** Scenarios (see table/handouts.ts) whose Table rooms offer this investigator in their "Play
+   * as" list, ready to take. Others are only on the Characters tab's pregens shelf. */
+  scenarios?: string[];
 }
 
 export const PREGEN_TEMPLATES: PregenTemplate[] = [
   {
-    key: 'rasmusDolk',
+    key: 'geralt',
+    scenarios: ['haunting'],
     characteristics: { STR: 80, CON: 60, SIZ: 50, DEX: 70, APP: 50, INT: 50, POW: 60, EDU: 40 },
     age: 36,
     luck: 50,
@@ -196,6 +203,7 @@ export const PREGEN_TEMPLATES: PregenTemplate[] = [
   },
   {
     key: 'maxHurst',
+    scenarios: ['haunting'],
     characteristics: { STR: 45, CON: 75, SIZ: 80, DEX: 50, APP: 60, INT: 75, POW: 70, EDU: 70 },
     age: 26,
     luck: 60,
@@ -216,6 +224,30 @@ export const PREGEN_TEMPLATES: PregenTemplate[] = [
       naturalWorld: 40,
       psychology: 57,
       dodge: 40,
+    },
+  },
+  {
+    key: 'professor',
+    scenarios: ['haunting'],
+    characteristics: { STR: 40, CON: 70, SIZ: 50, DEX: 60, APP: 50, INT: 60, POW: 50, EDU: 80 },
+    age: 43,
+    luck: 50,
+    skillOverrides: {
+      fightingBrawl: 40,
+      creditRating: 30,
+      history: 50,
+      charm: 35,
+      libraryUse: 70,
+      languageOther: 50,
+      languageOwn: 80,
+      listen: 40,
+      naturalWorld: 20,
+      occult: 50,
+      persuade: 30,
+      firstAid: 50,
+      psychology: 60,
+      spotHidden: 60,
+      dodge: 30,
     },
   },
   {
@@ -345,6 +377,7 @@ export function createPregenInvestigator(
 
   return {
     ...base,
+    pregenKey: template.key,
     name: flavor.name,
     occupation: flavor.occupation,
     age: template.age,

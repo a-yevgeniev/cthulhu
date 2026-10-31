@@ -4,40 +4,79 @@ import type { LedgerEntry } from 'coc7-protocol';
 import { useTable } from './TableContext';
 import { useLocale } from '../i18n/LocaleContext';
 import { useCharacters } from '../CharacterContext';
-import { damageNotation, type CharacterWeapon } from '../character';
+import { PREGEN_TEMPLATES, damageNotation, type CharacterWeapon } from '../character';
 import { rollDisplay } from '../successLevel';
 import Die from '../Die';
 import DiceGroups from '../DiceGroups';
 import CompassRose from '../CompassRose';
 import EldritchMark from '../EldritchMark';
-
-const LABEL = 'text-[10px] uppercase tracking-widest text-paper-dim';
-const FIELD =
-  'border border-ink-line bg-transparent text-paper placeholder:text-paper-dim/60 focus:border-brass focus:outline-none';
-const GHOST_BTN = 'border border-ink-line text-paper-dim transition-colors hover:border-brass hover:text-paper';
-const BRASS_BTN =
-  'border border-brass text-brass transition-colors hover:bg-brass hover:text-ink disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-brass';
+import MusicPanel from './MusicPanel';
+import { HandoutCue, HandoutDisplay, HandoutLibrary } from './HandoutPanels';
+import { SCENARIO_IDS, isScenarioId, type ScenarioId } from './handouts';
+import {
+  inviteCodeFromUrl,
+  inviteUrl,
+  rememberName,
+  rememberScenario,
+  rememberedName,
+  rememberedScenario,
+} from './session';
+import { BRASS_BTN, FIELD, GHOST_BTN, LABEL } from './styles';
 
 function ConnectForm() {
   const { t } = useLocale();
   const { status, error, createRoom, joinRoom, clearError, selectCharacter, selectedCharacterId } = useTable();
-  const { characters } = useCharacters();
-  const [mode, setMode] = useState<'create' | 'join'>('create');
-  const [name, setName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
+  const { characters, createPregenCharacter } = useCharacters();
+  // Arriving from an invite link means the player wants to join that room, not make a new one.
+  const [inviteCode] = useState(inviteCodeFromUrl);
+  const [mode, setMode] = useState<'create' | 'join'>(inviteCode ? 'join' : 'create');
+  const [name, setName] = useState(rememberedName);
+  const [roomCode, setRoomCode] = useState(inviteCode ?? '');
+  // The Haunting is the default scenario; '' is a free table. Remembered between visits.
+  const [scenario, setScenario] = useState<ScenarioId | ''>(() => {
+    const stored = rememberedScenario();
+    if (stored === '') return '';
+    return isScenarioId(stored) ? stored : SCENARIO_IDS[0];
+  });
 
   const connecting = status === 'connecting';
 
-  function handleSelectCharacter(id: string) {
-    selectCharacter(id || null);
-    const character = characters.find((c) => c.id === id);
-    if (character) setName(character.name.trim() || t.characters.unnamed);
+  // Ready-made investigators this room offers that the player hasn't taken yet. Making a room
+  // for a scenario offers that scenario's; joining one offers every scenario's, since the
+  // player doesn't know which scenario the room was opened for until they're in it.
+  const readyMade = PREGEN_TEMPLATES.filter(
+    (p) =>
+      p.scenarios?.some((s) => (mode === 'create' ? s === scenario : true)) &&
+      !characters.some((c) => c.pregenKey === p.key),
+  );
+  const PREGEN_PREFIX = 'pregen:';
+
+  function handleSelectCharacter(value: string) {
+    clearError();
+    if (value.startsWith(PREGEN_PREFIX)) {
+      // Taking a ready-made investigator creates it on this device (so it's on the Characters
+      // tab afterwards too) and selects it.
+      const template = readyMade.find((p) => PREGEN_PREFIX + p.key === value);
+      if (template) selectCharacter(createPregenCharacter(template, t));
+      return;
+    }
+    selectCharacter(value || null);
   }
 
+  // Playing as a character means the character's name is the player's name — there's nothing to
+  // type. Only a guest enters one (and only a guest's typed name is remembered for next time).
+  const selectedCharacter = characters.find((c) => c.id === selectedCharacterId);
+  const playerName = selectedCharacter ? selectedCharacter.name.trim() || t.characters.unnamed : name.trim();
+
   function submit() {
-    if (!name.trim()) return;
-    if (mode === 'create') createRoom(name.trim());
-    else joinRoom(roomCode.trim(), name.trim());
+    if (!playerName) return;
+    if (!selectedCharacter) rememberName(playerName);
+    if (mode === 'create') {
+      rememberScenario(scenario);
+      createRoom(playerName, scenario || undefined);
+    } else {
+      joinRoom(roomCode.trim(), playerName);
+    }
   }
 
   return (
@@ -64,7 +103,7 @@ function ConnectForm() {
         </button>
       </div>
 
-      {characters.length > 0 && (
+      {(characters.length > 0 || readyMade.length > 0) && (
         <label className="flex flex-col gap-1.5">
           <span className={LABEL}>{t.table.playAs}</span>
           <select
@@ -78,23 +117,51 @@ function ConnectForm() {
                 {c.name.trim() || t.characters.unnamed}
               </option>
             ))}
+            {readyMade.map((p) => (
+              <option key={p.key} value={PREGEN_PREFIX + p.key}>
+                {t.pregens[p.key].name}
+              </option>
+            ))}
           </select>
         </label>
       )}
 
-      <label className="flex flex-col gap-1.5">
-        <span className={LABEL}>{t.table.yourName}</span>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            clearError();
-          }}
-          placeholder={t.table.namePlaceholder}
-          className={`${FIELD} px-4 py-3 text-lg`}
-        />
-      </label>
+      {!selectedCharacter && (
+        <label className="flex flex-col gap-1.5">
+          <span className={LABEL}>{t.table.yourName}</span>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              clearError();
+            }}
+            placeholder={t.table.namePlaceholder}
+            className={`${FIELD} px-4 py-3 text-lg`}
+          />
+        </label>
+      )}
+
+      {mode === 'create' && (
+        <div className="flex flex-col gap-1.5">
+          <span className={LABEL}>{t.table.scenarioLabel}</span>
+          <div className="flex gap-2">
+            {[...SCENARIO_IDS, ''].map((id) => (
+              <button
+                key={id || 'free'}
+                type="button"
+                aria-pressed={scenario === id}
+                onClick={() => setScenario(id as ScenarioId | '')}
+                className={`flex-1 border py-2 text-xs uppercase tracking-wider transition-colors ${
+                  scenario === id ? 'border-brass text-brass' : 'border-ink-line text-paper-dim'
+                }`}
+              >
+                {id ? t.scenarios[id] : t.table.scenarioNone}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {mode === 'join' && (
         <label className="flex flex-col gap-1.5">
@@ -117,7 +184,7 @@ function ConnectForm() {
       <button
         type="button"
         onClick={submit}
-        disabled={connecting || !name.trim() || (mode === 'join' && !roomCode.trim())}
+        disabled={connecting || !playerName || (mode === 'join' && !roomCode.trim())}
         className={`${BRASS_BTN} py-4 text-xs font-semibold uppercase tracking-[.28em]`}
       >
         {connecting ? t.table.connecting : mode === 'create' ? t.table.create : t.table.join}
@@ -373,7 +440,7 @@ function KeeperRequestPanel() {
         <select
           value={targetId}
           onChange={(e) => setTargetId(e.target.value)}
-          className={`${FIELD} px-2 py-2 text-sm`}
+          className={`${FIELD} min-w-0 max-w-[40%] px-2 py-2 text-sm`}
         >
           <option value="">{t.table.requestRollTarget}</option>
           {others.map((p) => (
@@ -387,9 +454,9 @@ function KeeperRequestPanel() {
           value={skillLabel}
           onChange={(e) => setSkillLabel(e.target.value)}
           placeholder={t.table.requestRollSkillPlaceholder}
-          className={`${FIELD} flex-1 px-3 py-2 text-sm`}
+          className={`${FIELD} min-w-0 flex-1 px-3 py-2 text-sm`}
         />
-        <button type="button" onClick={submit} className={`px-3 text-xs uppercase tracking-wider ${GHOST_BTN}`}>
+        <button type="button" onClick={submit} className={`shrink-0 px-3 text-xs uppercase tracking-wider ${GHOST_BTN}`}>
           {t.table.requestRollSend}
         </button>
       </div>
@@ -397,21 +464,65 @@ function KeeperRequestPanel() {
   );
 }
 
+function InviteButton({ roomCode }: { roomCode: string }) {
+  const { t } = useLocale();
+  const [copied, setCopied] = useState(false);
+
+  async function invite() {
+    const url = inviteUrl(roomCode);
+    // On a phone, the native share sheet (WhatsApp, Telegram, Messages…) is the fastest way to
+    // get the link to the table; elsewhere, copy it.
+    if (typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches) {
+      try {
+        await navigator.share({ url });
+        return;
+      } catch {
+        // Cancelled, or sharing failed — fall through to copying.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable (insecure context / denied); nothing useful left to do.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={invite}
+      className={`text-[11px] uppercase tracking-wider transition-colors ${copied ? 'text-brass' : 'text-paper-dim hover:text-brass'}`}
+    >
+      {copied ? t.table.inviteCopied : t.table.inviteLink}
+    </button>
+  );
+}
+
 function RoomView() {
   const { t } = useLocale();
-  const { roomCode, isKeeper, players, ledger, leaveRoom, prompt, dismissPrompt } = useTable();
+  const { roomCode, scenario, isKeeper, players, ledger, leaveRoom, prompt, dismissPrompt } = useTable();
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <span className={LABEL}>{t.table.roomLabel}</span>
           <div className="font-display text-3xl tracking-widest text-paper">{roomCode}</div>
+          {scenario && t.scenarios[scenario] && (
+            <div className="mt-1 text-[11px] uppercase tracking-widest text-brass">{t.scenarios[scenario]}</div>
+          )}
         </div>
-        <button type="button" onClick={leaveRoom} className="text-[11px] uppercase tracking-wider text-oxblood/80 transition-colors hover:text-oxblood">
-          {t.table.leaveRoom}
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          {roomCode && <InviteButton roomCode={roomCode} />}
+          <button type="button" onClick={leaveRoom} className="text-[11px] uppercase tracking-wider text-oxblood/80 transition-colors hover:text-oxblood">
+            {t.table.leaveRoom}
+          </button>
+        </div>
       </div>
+
+      <HandoutCue />
 
       {prompt && (
         <div className="flex items-center justify-between border border-brass px-4 py-3">
@@ -439,6 +550,8 @@ function RoomView() {
 
       <RollComposer />
       {isKeeper && <KeeperRequestPanel />}
+      {isKeeper && <HandoutLibrary />}
+      <MusicPanel />
 
       <div>
         {ledger.length === 0 ? (
@@ -451,6 +564,8 @@ function RoomView() {
           </div>
         )}
       </div>
+
+      <HandoutDisplay />
     </div>
   );
 }

@@ -9,12 +9,17 @@ import {
   type JoinRoomRequest,
   type JoinRoomResponse,
   type LedgerEntry,
+  type MusicState,
   type NotationRollRequest,
   type Player,
   type RollAck,
   type RollPrompt,
   type RollRequestPayload,
   type SanityRollRequest,
+  type SetHandoutAck,
+  type SetHandoutRequest,
+  type SetMusicAck,
+  type SetMusicRequest,
   type SkillRollRequest,
 } from 'coc7-protocol';
 import { insertLedgerEntry, insertPlayer, ledgerFor } from './db.js';
@@ -59,6 +64,31 @@ function broadcastPlayers(room: LiveRoom) {
   io.to(room.code).emit(SOCKET_EVENTS.playersChanged, playersList(room));
 }
 
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+const MAX_TITLE_LENGTH = 120;
+/** Scenario and handout ids are short slugs the web app defines ("haunting", "the-eye-sign").
+ * The server has no copy of that list — it only insists on the shape, so a client can't park
+ * arbitrary text in a room's state for everyone else to receive. */
+const SLUG = /^[a-z0-9-]{1,48}$/;
+
+/** The Keeper's music message crosses a trust boundary like any other client input, and every
+ * client in the room will act on it (load that video id into an embedded player), so rebuild it
+ * field by field instead of storing whatever arrived: a strict id shape, a bounded title, a
+ * clamped volume. Returns null if it isn't a usable state. */
+function sanitizeMusic(raw: unknown): MusicState | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const m = raw as Partial<MusicState>;
+  if (typeof m.videoId !== 'string' || !YOUTUBE_ID.test(m.videoId)) return null;
+  const volume = Number(m.volume);
+  if (!Number.isFinite(volume)) return null;
+  return {
+    videoId: m.videoId,
+    title: typeof m.title === 'string' ? m.title.trim().slice(0, MAX_TITLE_LENGTH) : '',
+    playing: m.playing === true,
+    volume: Math.min(100, Math.max(0, Math.round(volume))),
+  };
+}
+
 /** Send a ledger entry to whoever is allowed to see it: everyone if public, only the roller
  * and the keeper if secret. */
 function broadcastEntry(room: LiveRoom, entry: LedgerEntry) {
@@ -100,14 +130,24 @@ io.on('connection', (socket: Socket) => {
       return;
     }
     const code = makeRoomCode();
-    const room = openRoom(code);
+    const room = openRoom(code, typeof payload.scenario === 'string' && SLUG.test(payload.scenario) ? payload.scenario : null);
     const playerId = makePlayerId();
     const player: Player = { id: playerId, name, isKeeper: true, connected: true };
     addPlayer(room, player, socket.id);
     insertPlayer({ ...player, roomCode: code });
     socket.join(code);
     socket.data = { roomCode: code, playerId } satisfies SocketData;
-    ack({ ok: true, roomCode: code, playerId, isKeeper: true, players: playersList(room), ledger: [] });
+    ack({
+      ok: true,
+      roomCode: code,
+      playerId,
+      isKeeper: true,
+      players: playersList(room),
+      ledger: [],
+      music: room.music,
+      scenario: room.scenario,
+      handout: room.handout,
+    });
   });
 
   socket.on(SOCKET_EVENTS.joinRoom, (payload: JoinRoomRequest, ackArg: unknown) => {
@@ -129,8 +169,62 @@ io.on('connection', (socket: Socket) => {
     insertPlayer({ ...player, roomCode: code });
     socket.join(code);
     socket.data = { roomCode: code, playerId } satisfies SocketData;
-    ack({ ok: true, roomCode: code, playerId, isKeeper: false, players: playersList(room), ledger: ledgerFor(code, playerId) });
+    ack({
+      ok: true,
+      roomCode: code,
+      playerId,
+      isKeeper: false,
+      players: playersList(room),
+      ledger: ledgerFor(code, playerId),
+      music: room.music,
+      scenario: room.scenario,
+      handout: room.handout,
+    });
     broadcastPlayers(room);
+  });
+
+  socket.on(SOCKET_EVENTS.handoutSet, (payload: SetHandoutRequest, ackArg: unknown) => {
+    const ack = safeAck<SetHandoutAck>(ackArg);
+    const data = socketData(socket);
+    const room = data && getRoom(data.roomCode);
+    if (!data || !room || data.playerId !== payload?.playerId || data.roomCode !== payload?.roomCode) {
+      ack({ ok: false, error: 'Not connected to this room.' });
+      return;
+    }
+    if (!room.players.get(data.playerId)?.isKeeper) {
+      ack({ ok: false, error: 'Only the Keeper can show or hide handouts.' });
+      return;
+    }
+    const imageId = payload.imageId;
+    if (imageId !== null && !(typeof imageId === 'string' && SLUG.test(imageId))) {
+      ack({ ok: false, error: 'Invalid handout.' });
+      return;
+    }
+    room.handout = { imageId };
+    io.to(room.code).emit(SOCKET_EVENTS.handoutState, room.handout);
+    ack({ ok: true });
+  });
+
+  socket.on(SOCKET_EVENTS.musicSet, (payload: SetMusicRequest, ackArg: unknown) => {
+    const ack = safeAck<SetMusicAck>(ackArg);
+    const data = socketData(socket);
+    const room = data && getRoom(data.roomCode);
+    if (!data || !room || data.playerId !== payload?.playerId || data.roomCode !== payload?.roomCode) {
+      ack({ ok: false, error: 'Not connected to this room.' });
+      return;
+    }
+    if (!room.players.get(data.playerId)?.isKeeper) {
+      ack({ ok: false, error: 'Only the Keeper can control the music.' });
+      return;
+    }
+    const music = sanitizeMusic(payload.music);
+    if (!music) {
+      ack({ ok: false, error: 'Invalid music state.' });
+      return;
+    }
+    room.music = music;
+    io.to(room.code).emit(SOCKET_EVENTS.musicState, music);
+    ack({ ok: true });
   });
 
   socket.on(SOCKET_EVENTS.rollSkill, (payload: SkillRollRequest, ackArg: unknown) => {
