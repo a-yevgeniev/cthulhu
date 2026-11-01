@@ -1,8 +1,8 @@
 # Development Plan — Call of Cthulhu 7e Dice Roller
 
-**Status:** Phases 1–2 complete. Phase 3 mostly complete (see notes). Phase 4 first vertical
-slice on branch `phase-4-shared-table` (see notes — not merged, not deployed). Phase 5
-outstanding.
+**Status:** Phases 1–2 complete. Phase 3 mostly complete (see notes). Phase 4 (shared table) is
+merged and live — server on Fly.io, web app on GitHub Pages — with the Keeper tools well beyond
+the first slice (see notes). Phase 5 outstanding.
 
 ---
 
@@ -160,16 +160,13 @@ end-of-scenario development.
 
 ---
 
-## Phase 4 — Shared table (Track B only) 🚧 FIRST VERTICAL SLICE, on branch `phase-4-shared-table`
+## Phase 4 — Shared table (Track B only) ✅ MERGED AND LIVE
 
-Built and verified locally (three simultaneous browser tabs: Keeper + two players), **not
-merged to master**. The server is live at
-[coc7-server.fly.dev](https://coc7-server.fly.dev) (Fly.io, `iad`, a mounted volume for the
-SQLite ledger) — but the web app doesn't point at it yet in production, since
-`VITE_COC7_SERVER_URL` is wired into the GitHub Pages deploy workflow (which only runs on
-`master`) and this is still on its own branch. See
-[`packages/server/README.md`](packages/server/README.md) for deployment details and the full
-list of what's stubbed vs. real.
+Merged to `master` (the old `phase-4-shared-table` branch is fully contained in it). The server
+is live at [coc7-server.fly.dev](https://coc7-server.fly.dev) (Fly.io, `iad`, a mounted volume
+for the SQLite ledger) and the deployed web app points at it through `VITE_COC7_SERVER_URL` in
+the GitHub Pages workflow. See [`packages/server/README.md`](packages/server/README.md) for
+deployment details and the full list of what's stubbed vs. real.
 
 Delivered as `packages/server` (Fastify + Socket.IO + `node:sqlite` — chosen over
 `better-sqlite3` specifically because it needs no native build step, which this dev machine
@@ -199,15 +196,63 @@ other four rather than deeply integrated into Quick Roll / Character Sheet.
   client (Keeper's "request a roll" panel didn't pass an ack) and confirmed the fix holds under
   the same sequence.
 
-**Deferred**, tracked in the server README: rooms don't survive a server restart (in-memory
-only; only the ledger persists), no reconnect-with-identity on tab reload, Keeper role isn't
-transferable.
+**Added since the first slice** (all verified against a local server with several browser tabs;
+the Keeper-only events validate and clamp every field server-side, and none of it trusts a
+client-supplied identity):
+
+- **Scenario rooms and invite links.** A room can be opened for a prepared scenario ("The
+  Haunting", the default; or a free table). `?room=CODE` opens the Table tab on the join form;
+  the last name and scenario are remembered. Ready-made investigators are tagged with the
+  scenarios they belong to.
+- **Keeper music.** The Keeper picks a track from a YouTube playlist, plays/stops and sets the
+  volume; every client plays it through YouTube's embedded player (no audio touches the
+  server, no playback position is synced). Only the Keeper sees the player; listeners get a
+  hidden one and a local mute.
+- **Handouts.** The Keeper shows images to the whole table, **several at once** (up to six),
+  each hidden on its own. Bundled ones (the cult symbol and three floor plans for The Haunting,
+  `table/handouts.ts`) travel as an id only. The Keeper can also **upload their own**: shrunk
+  client-side, kept in the Keeper's IndexedDB, and sent to the room only while shown (never
+  stored ahead of time on the server; JPEG/PNG/WebP only, SVG refused). Wire format is one
+  step per message (`show` / `hide` / `clear`).
+- **Rejoin after a reload or dropped connection** (`room:resume`). Entering a room returns a
+  secret token; the client stores `{ roomCode, playerId, token }` and presents it on every
+  socket connect, so a reload — or a phone waking up — puts the player back as the same
+  person, with the room on screen and a "reconnecting" note meanwhile. The player id alone is
+  never enough (ids are public to the room). The Keeper's replay includes players' secret
+  rolls.
+- **Players join as an investigator — no guests.** Only one *connected* player may hold a given
+  investigator, enforced on the server (`characterKey`); the join form greys out taken ones. A
+  dropped holder frees the seat. The Keeper plays no investigator.
+- **Roll picker.** A side panel (`RollPicker`) with the investigator's characteristics first,
+  then skills (searchable); tapping a row rolls it. The investigator's HP, MP, Luck and SAN sit
+  on the room screen itself as −/+ counters (`Vitals`, sharing `ResourceTracker` with the
+  Characters sheet). There is no Sanity-check UI at the table any more — the Characters sheet
+  still has one — though the server's `roll:sanity` and the ledger's rendering of it remain.
+- **Keeper NPCs.** `table/npcs.ts` holds a scenario's non-player characters (numbers only; names
+  and cues live in `Translations.npcs`). The Keeper gets a collapsible stat card per NPC with
+  tap-to-roll characteristics, skills, attack, damage and armour, plus HP/MP/armour counters kept
+  on the Keeper's device per room. Walter Corbitt ships for The Haunting, transcribed from the
+  Ukrainian Quick-Start; cues are paraphrased rather than copied.
+- **Keeper's own music.** Beyond the playlist, the Keeper can paste a YouTube link
+  (`parseYouTubeId`) to add a track; oEmbed checks it's playable and names it, and it's kept in
+  the Keeper's localStorage. The room still only ever receives a video id.
+- **Keeper page layout.** Handouts, music and "request a roll" are collapsible sections (open
+  state remembered; music keeps playing while folded), and the newest rolls sit directly under
+  the dice.
+
+**Deferred**: rooms don't survive a server restart (in-memory only; only the ledger persists —
+clients that were in one are told the room is gone and land on the join form), the Keeper role
+isn't transferable, and HP/MP/Luck still aren't tied to rolls (see Phase 3).
+
+**Deploy order matters when the protocol changes**: deploy the server first (`fly deploy -a
+coc7-server --yes` from the repo root), then push `master` for the web app — a new client talking
+to an old server breaks. Deploying the server restarts it and drops any open rooms.
 
 Stack used: Node + Fastify, SQLite via `node:sqlite` (no native deps), deployed on Fly.io.
 
 ### Deployment
 
-Server deployed 2026-08-28: Fly.io app `coc7-server`, `iad` region, 1GB volume mounted at
+Server first deployed 2026-08-28, most recently redeployed 2026-10-31: Fly.io app `coc7-server`, `iad` region, 1GB volume mounted at
 `/data`, `auto_stop_machines` on (stops when idle, so it isn't running — or billing — between
 sessions; expect a few seconds' cold start on the first connection after a quiet spell). Config
 is [`/fly.toml`](fly.toml) at the repo root (build context has to be the repo root so npm
@@ -253,5 +298,5 @@ logos, and check their current community content terms before attaching a name a
 | 1 — Rules engine | ~2 days | Done |
 | 2 — Interface | ~3 days | Done |
 | 3 — Characters | ~3 days | Mostly done |
-| 4 — Shared table | 2–3 weeks | First slice on branch, not deployed |
+| 4 — Shared table | 2–3 weeks | Done and live (see Deferred) |
 | 5 — Polish | ~2 days | |

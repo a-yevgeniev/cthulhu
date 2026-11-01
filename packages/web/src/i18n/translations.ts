@@ -172,9 +172,17 @@ export interface Translations {
     skillsNoMatch: string;
     drawerClose: string;
     sanityOutcome: (loss: number, after: number) => string;
-    sanityCurrent: (current: number, max: number) => string;
-    sanityPlainRoll: string;
-    sanityCommonLosses: string;
+    npcBuild: string;
+    npcDamageBonus: string;
+    npcMove: string;
+    npcSanLoss: string;
+    npcSpells: string;
+    npcArtifact: string;
+    npcAttack: string;
+    npcDamage: string;
+    npcArmor: string;
+    npcNotes: string;
+    npcReset: string;
     music: string;
     musicPickTrack: string;
     musicLoading: string;
@@ -188,6 +196,15 @@ export interface Translations {
     musicNothing: string;
     musicTapForSound: string;
     musicPlaylistLink: string;
+    musicAddPlaceholder: string;
+    musicAdd: string;
+    musicAddBad: string;
+    musicAddUnavailable: string;
+    musicAddOffline: string;
+    musicAddFull: string;
+    musicOwnGroup: string;
+    musicPlaylistGroup: string;
+    musicRemove: string;
     scenarioLabel: string;
     scenarioNone: string;
     inviteLink: string;
@@ -210,6 +227,19 @@ export interface Translations {
   scenarios: Record<string, string>;
   /** Title (shown to the Keeper) and alt text for each handout image, keyed by handout id. */
   handouts: Record<string, { title: string; alt: string }>;
+  /** The Keeper's non-player characters (see table/npcs.ts), keyed by id. `rolls` names each
+   * percentage roll by its id; `notes` are short cues, in our own words. */
+  npcs: Record<
+    string,
+    {
+      name: string;
+      tagline: string;
+      rolls: Record<string, string>;
+      spells: string;
+      artifact: string;
+      notes: string[];
+    }
+  >;
 }
 
 const enSkills: Record<string, string> = {
@@ -562,9 +592,17 @@ export const en: Translations = {
     skillsNoMatch: 'No skill matches.',
     drawerClose: 'Close',
     sanityOutcome: (loss, after) => (loss > 0 ? `Sanity −${loss} → ${after}` : `No Sanity lost · ${after}`),
-    sanityCurrent: (current, max) => `Sanity ${current} / ${max}`,
-    sanityPlainRoll: 'Sanity roll',
-    sanityCommonLosses: 'Common losses',
+    npcBuild: 'Build',
+    npcDamageBonus: 'Damage bonus',
+    npcMove: 'Move',
+    npcSanLoss: 'Sanity loss',
+    npcSpells: 'Spells',
+    npcArtifact: 'Magical item',
+    npcAttack: 'Attack',
+    npcDamage: 'Damage',
+    npcArmor: 'Armour',
+    npcNotes: 'Notes',
+    npcReset: 'Reset',
     music: 'Music',
     musicPickTrack: 'Pick a track…',
     musicLoading: 'Loading playlist…',
@@ -578,6 +616,15 @@ export const en: Translations = {
     musicNothing: 'Nothing playing',
     musicTapForSound: 'Tap to enable sound',
     musicPlaylistLink: 'Playlist on YouTube',
+    musicAddPlaceholder: 'Paste a YouTube link to add a track',
+    musicAdd: 'Add',
+    musicAddBad: "That doesn't look like a YouTube video link.",
+    musicAddUnavailable: "YouTube won't play that video here (private, removed, or embedding is off).",
+    musicAddOffline: "Couldn't reach YouTube. Check your connection.",
+    musicAddFull: 'Your track list is full. Remove one first.',
+    musicOwnGroup: 'My tracks',
+    musicPlaylistGroup: 'Playlist',
+    musicRemove: 'Remove from my tracks',
     scenarioLabel: 'Scenario',
     scenarioNone: 'Free table',
     inviteLink: 'Invite link',
@@ -616,6 +663,29 @@ export const en: Translations = {
     'second-floor': {
       title: 'Second floor',
       alt: 'Hand-drawn floor plan of the second floor: three large rooms in a row and a staircase.',
+    },
+  },
+  npcs: {
+    corbitt: {
+      name: 'Walter Corbitt',
+      tagline: 'The raging dead',
+      rolls: {
+        fighting: 'Fighting',
+        dodge: 'Dodge',
+        sleightOfHand: 'Sleight of Hand',
+        intimidate: 'Intimidate',
+        cthulhuMythos: 'Cthulhu Mythos',
+        stealth: 'Stealth',
+        listen: 'Listen',
+      },
+      spells: 'Dominate (variant), Flesh Ward, Summon / Bind Dimensional Shambler',
+      artifact: 'The flying knife',
+      notes: [
+        'Casts Flesh Ward as soon as anyone enters the house, so keep count of his magic points: he regains 1 per hour. Investigators who go straight for the body can catch him with them spent.',
+        'Armour comes from the ward: roll it once, and each point absorbs 1 damage.',
+        'His filthy nails can infect. After a hit, the victim rolls Luck; on a failure a fever starts next day and CON rolls follow until it breaks or they die. Lost CON does not come back.',
+        "He's cruel and patient: he wants to split the party and enjoys their suffering, and he hunts for Mythos knowledge.",
+      ],
     },
   },
 };
@@ -847,9 +917,17 @@ export const uk: Translations = {
     skillsNoMatch: 'Нічого не знайдено.',
     drawerClose: 'Закрити',
     sanityOutcome: (loss, after) => (loss > 0 ? `Глузд −${loss} → ${after}` : `Глузд не втрачено · ${after}`),
-    sanityCurrent: (current, max) => `Глузд ${current} / ${max}`,
-    sanityPlainRoll: 'Кидок Глузду',
-    sanityCommonLosses: 'Типові втрати',
+    npcBuild: 'Будова',
+    npcDamageBonus: 'Бонус шкоди',
+    npcMove: 'Переміщення',
+    npcSanLoss: 'Втрата глузду',
+    npcSpells: 'Заклинання',
+    npcArtifact: 'Магічний предмет',
+    npcAttack: 'Атака',
+    npcDamage: 'Шкода',
+    npcArmor: 'Броня',
+    npcNotes: 'Нотатки',
+    npcReset: 'Скинути',
     music: 'Музика',
     musicPickTrack: 'Обрати трек…',
     musicLoading: 'Завантаження плейлиста…',
@@ -863,6 +941,15 @@ export const uk: Translations = {
     musicNothing: 'Нічого не грає',
     musicTapForSound: 'Торкніться, щоб увімкнути звук',
     musicPlaylistLink: 'Плейлист на YouTube',
+    musicAddPlaceholder: 'Вставте посилання на YouTube, щоб додати трек',
+    musicAdd: 'Додати',
+    musicAddBad: 'Це не схоже на посилання на відео YouTube.',
+    musicAddUnavailable: 'YouTube не відтворить це відео тут (приватне, видалене або вимкнено вбудовування).',
+    musicAddOffline: "Не вдалося зв'язатися з YouTube. Перевірте з'єднання.",
+    musicAddFull: 'Список ваших треків заповнено. Спершу видаліть один.',
+    musicOwnGroup: 'Мої треки',
+    musicPlaylistGroup: 'Плейлист',
+    musicRemove: 'Видалити з моїх треків',
     scenarioLabel: 'Пригода',
     scenarioNone: 'Вільний стіл',
     inviteLink: 'Посилання-запрошення',
@@ -901,6 +988,29 @@ export const uk: Translations = {
     'second-floor': {
       title: 'Другий поверх',
       alt: 'Накреслений від руки план другого поверху: три великі кімнати в ряд і сходи.',
+    },
+  },
+  npcs: {
+    corbitt: {
+      name: 'Волтер Корбіт',
+      tagline: 'Лютий мертвяк',
+      rolls: {
+        fighting: 'Бій',
+        dodge: 'Ухиляння',
+        sleightOfHand: 'Вправність рук',
+        intimidate: 'Залякування',
+        cthulhuMythos: 'Міфи Ктулху',
+        stealth: 'Непомітність',
+        listen: 'Слух',
+      },
+      spells: 'Пригнічення (варіант), Захист плоті, Викликати / Зв’язати Просторового Блукача',
+      artifact: 'Летючий ніж',
+      notes: [
+        'Накладає «Захист плоті», щойно хтось заходить у будинок, тож стежте за його очками магії: вони відновлюються по 1 за годину. Дослідники, що одразу кинуться до тіла, можуть заскочити його з витраченими очками.',
+        'Броня береться із захисту: киньте її один раз, і кожне очко поглинає 1 пошкодження.',
+        'Його брудні нігті можуть заразити. Після влучання жертва кидає на талан; у разі провалу наступного дня починається гарячка, і йдуть кидки на СТА, доки вона не мине або жертва не помре. Втрачена СТА не відновлюється.',
+        'Він злий і терплячий: хоче розділити групу, насолоджується стражданнями дослідників і полює на знання про Міфи.',
+      ],
     },
   },
 };

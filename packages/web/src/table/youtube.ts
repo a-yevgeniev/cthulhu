@@ -103,3 +103,74 @@ async function fetchTitle(videoId: string, fallback: string): Promise<string> {
 export function fetchTrackTitles(ids: string[]): Promise<MusicTrack[]> {
   return Promise.all(ids.map(async (id, i) => ({ id, title: await fetchTitle(id, `#${i + 1}`) })));
 }
+
+const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+
+/** The video id in whatever a Keeper pastes: a watch / short / embed / youtu.be / music.youtube.com
+ * link (any extra parameters, such as a playlist or a start time, are ignored), or the bare
+ * 11-character id. Null if it isn't one. */
+export function parseYouTubeId(input: string): string | null {
+  const text = input.trim();
+  if (VIDEO_ID.test(text)) return text;
+  let url: URL;
+  try {
+    url = new URL(/^[a-z]+:\/\//i.test(text) ? text : `https://${text}`);
+  } catch {
+    return null;
+  }
+  const host = url.hostname.replace(/^(www|m|music)\./, '');
+  let id: string | null = null;
+  if (host === 'youtu.be') id = url.pathname.split('/')[1] ?? null;
+  else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+    const [, kind, second] = url.pathname.split('/');
+    id = kind === 'watch' ? url.searchParams.get('v') : kind === 'shorts' || kind === 'embed' || kind === 'live' ? (second ?? null) : null;
+  }
+  return id && VIDEO_ID.test(id) ? id : null;
+}
+
+export type VideoLookup = { ok: true; title: string } | { ok: false; reason: 'unavailable' | 'offline' };
+
+/** Asks YouTube whether a video exists and may be played in an embedded player (oEmbed answers
+ * with an error for private, removed and embedding-disabled videos), and what it's called. */
+export async function lookUpVideo(videoId: string): Promise<VideoLookup> {
+  let res: Response;
+  try {
+    const url = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`;
+    res = await fetch(url);
+  } catch {
+    return { ok: false, reason: 'offline' };
+  }
+  if (!res.ok) return { ok: false, reason: 'unavailable' };
+  try {
+    const data = (await res.json()) as { title?: string };
+    const title = data.title ? shortTitle(data.title) : videoId;
+    titleCache.set(videoId, title);
+    return { ok: true, title };
+  } catch {
+    return { ok: false, reason: 'unavailable' };
+  }
+}
+
+const OWN_TRACKS_KEY = 'coc7-music-tracks';
+export const MAX_OWN_TRACKS = 50;
+
+/** Tracks the Keeper has added themselves, kept on this device between sessions. */
+export function loadOwnTracks(): MusicTrack[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(OWN_TRACKS_KEY) ?? '[]') as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((t): t is MusicTrack => !!t && typeof t.id === 'string' && VIDEO_ID.test(t.id) && typeof t.title === 'string')
+      .slice(0, MAX_OWN_TRACKS);
+  } catch {
+    return [];
+  }
+}
+
+export function saveOwnTracks(tracks: MusicTrack[]): void {
+  try {
+    localStorage.setItem(OWN_TRACKS_KEY, JSON.stringify(tracks.slice(0, MAX_OWN_TRACKS)));
+  } catch {
+    // not remembered; harmless
+  }
+}

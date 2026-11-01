@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { derivedStats, type Difficulty, type SanityRollResult } from 'coc7-engine';
+import { derivedStats, maxSanity, type Difficulty, type SanityRollResult } from 'coc7-engine';
 import type { LedgerEntry } from 'coc7-protocol';
 import { useTable } from './TableContext';
 import { useLocale } from '../i18n/LocaleContext';
@@ -11,7 +11,9 @@ import DiceGroups from '../DiceGroups';
 import CompassRose from '../CompassRose';
 import EldritchMark from '../EldritchMark';
 import MusicPanel from './MusicPanel';
+import NpcPanel from './NpcPanel';
 import RollPicker from './RollPicker';
+import ResourceTracker from '../ResourceTracker';
 import Section from './Section';
 import { HandoutCue, HandoutDisplay, HandoutLibrary } from './HandoutPanels';
 import { SCENARIO_IDS, isScenarioId, type ScenarioId } from './handouts';
@@ -287,10 +289,55 @@ function EntryRow({ entry, t }: { entry: LedgerEntry; t: ReturnType<typeof useLo
   );
 }
 
+/** The player's own investigator's health, magic, Luck and Sanity, right on the room screen where
+ * they're needed mid-scene. The same counters, limits and stored numbers as the Characters sheet
+ * (a Sanity check from the roll picker lands here too). Not shown to the Keeper. */
+function Vitals() {
+  const { t } = useLocale();
+  const { selectedCharacterId, isKeeper } = useTable();
+  const { characters, updateCharacter } = useCharacters();
+  const character = isKeeper ? undefined : characters.find((c) => c.id === selectedCharacterId);
+  if (!character) return null;
+
+  const { id } = character;
+  const derived = derivedStats(character.characteristics, character.age);
+  const mythos = character.skills.find((s) => s.key === 'cthulhuMythos')?.value ?? 0;
+  const maxSan = maxSanity(mythos);
+  const clamp = (n: number, max: number) => Math.max(0, Math.min(max, n));
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <ResourceTracker
+        label={t.sheet.hp}
+        current={character.currentHp}
+        max={derived.hitPoints}
+        onChange={(next) => updateCharacter(id, (c) => ({ ...c, currentHp: clamp(next, derived.hitPoints) }))}
+      />
+      <ResourceTracker
+        label={t.sheet.mp}
+        current={character.currentMp}
+        max={derived.magicPoints}
+        onChange={(next) => updateCharacter(id, (c) => ({ ...c, currentMp: clamp(next, derived.magicPoints) }))}
+      />
+      <ResourceTracker
+        label={t.sheet.luck}
+        current={character.currentLuck}
+        onChange={(next) => updateCharacter(id, (c) => ({ ...c, currentLuck: clamp(next, Infinity) }))}
+      />
+      <ResourceTracker
+        label={t.sheet.san}
+        current={character.currentSan}
+        max={maxSan}
+        onChange={(next) => updateCharacter(id, (c) => ({ ...c, currentSan: clamp(next, maxSan) }))}
+      />
+    </div>
+  );
+}
+
 function RollComposer() {
   const { t } = useLocale();
-  const { rollSkill, rollNotation, rollSanity, selectedCharacterId, isKeeper } = useTable();
-  const { characters, updateCharacter } = useCharacters();
+  const { rollSkill, rollNotation, selectedCharacterId, isKeeper } = useTable();
+  const { characters } = useCharacters();
   // The Keeper plays no investigator, whatever was last chosen on this device.
   const character = isKeeper ? undefined : characters.find((c) => c.id === selectedCharacterId);
   const [tab, setTab] = useState<'skill' | 'notation'>('skill');
@@ -315,30 +362,6 @@ function RollComposer() {
   function rollCharacterValue(label: string, value: number) {
     rollSkill({ skill: value, label, difficulty, secret });
     // Close so the result, which lands just below the dice, is what's on screen.
-    setPickerOpen(false);
-  }
-
-  function checkSanity(loss: string, sanitySecret: boolean) {
-    if (!character) return;
-    const { id } = character;
-    rollSanity(
-      {
-        sanity: character.currentSan,
-        startingSanity: character.startingSan,
-        lostThisSession: character.sanLostThisSession,
-        loss,
-        secret: sanitySecret,
-      },
-      // The server rolled it; the investigator on this device takes the loss, as on the sheet.
-      (entry) => {
-        const result = entry.result as SanityRollResult;
-        updateCharacter(id, (c) => ({
-          ...c,
-          currentSan: result.sanityAfter,
-          sanLostThisSession: c.sanLostThisSession + result.loss,
-        }));
-      },
-    );
     setPickerOpen(false);
   }
 
@@ -390,7 +413,6 @@ function RollComposer() {
               secret={secret}
               onSecret={setSecret}
               onRollValue={rollCharacterValue}
-              onSanityCheck={checkSanity}
               onClose={() => setPickerOpen(false)}
             />
           )}
@@ -668,9 +690,11 @@ function RoomView() {
         </div>
       </div>
 
+      <Vitals />
       <RollComposer />
       <RecentRolls />
       {isKeeper && <KeeperRequestPanel />}
+      {isKeeper && <NpcPanel />}
       {isKeeper && <HandoutLibrary />}
       <MusicPanel />
 

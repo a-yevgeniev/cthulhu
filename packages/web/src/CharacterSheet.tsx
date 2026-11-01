@@ -16,6 +16,7 @@ import { useLocale } from './i18n/LocaleContext';
 import type { Translations } from './i18n/translations';
 import { damageNotation, makeId, type CharacterSkill, type CharacterWeapon, type Investigator } from './character';
 import Die from './Die';
+import ResourceTracker from './ResourceTracker';
 import SunburstDivider from './SunburstDivider';
 import EldritchMark from './EldritchMark';
 
@@ -29,44 +30,6 @@ const GHOST_BTN = 'border border-ink-line text-paper-dim transition-colors hover
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
-}
-
-function ResourceTracker({
-  label,
-  current,
-  max,
-  onChange,
-}: {
-  label: string;
-  current: number;
-  max?: number;
-  onChange: (next: number) => void;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 border border-ink-line px-2 py-3">
-      <span className={LABEL}>{label}</span>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onChange(clamp(current - 1, 0, max ?? Infinity))}
-          className={`grid h-7 w-7 place-items-center ${GHOST_BTN}`}
-        >
-          −
-        </button>
-        <span className="w-12 text-center font-display text-lg tabular-nums text-paper">
-          {current}
-          {max !== undefined && <span className="text-xs text-paper-dim">/{max}</span>}
-        </span>
-        <button
-          type="button"
-          onClick={() => onChange(clamp(current + 1, 0, max ?? Infinity))}
-          className={`grid h-7 w-7 place-items-center ${GHOST_BTN}`}
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function RollBadge({ result, t, spinKey }: { result: SkillRollResult; t: Translations; spinKey: number }) {

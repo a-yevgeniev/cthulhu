@@ -70,13 +70,13 @@ interface TableContextValue extends TableState {
   leaveRoom: () => void;
   selectCharacter: (id: string | null) => void;
   rollSkill: (args: { skill: number; label?: string; difficulty?: Difficulty; modifierDice?: number; secret?: boolean }) => void;
-  rollNotation: (args: { notation: string; label?: string; secret?: boolean }) => void;
-  /** `onEntry` gets the recorded result once the server has rolled it, so the caller can apply the
-   * Sanity loss to its own investigator. */
-  rollSanity: (
-    args: { sanity: number; startingSanity?: number; lostThisSession?: number; loss: string; secret?: boolean },
+  /** `onEntry` gets the recorded roll once the server has made it, for callers that act on the
+   * result (say, setting an NPC's armour from a roll). */
+  rollNotation: (
+    args: { notation: string; label?: string; secret?: boolean },
     onEntry?: (entry: LedgerEntry) => void,
   ) => void;
+  rollSanity: (args: { sanity: number; startingSanity?: number; lostThisSession?: number; loss: string; secret?: boolean }) => void;
   requestRoll: (args: { targetPlayerId: string; skillLabel: string; difficulty?: Difficulty; modifierDice?: number }) => void;
   /** Keeper only (the server rejects anyone else). Applies locally at once so the controls feel
    * instant, and relays to the room at a throttled rate so dragging a volume slider doesn't
@@ -300,16 +300,16 @@ export function TableProvider({ children }: { children: ReactNode }) {
   );
 
   const rollNotation = useCallback<TableContextValue['rollNotation']>(
-    (args) => guardedEmit<RollAck>(SOCKET_EVENTS.rollNotation, args, (res) => {
-      if (!res.ok) setState((s) => ({ ...s, error: res.error }));
+    (args, onEntry) => guardedEmit<RollAck>(SOCKET_EVENTS.rollNotation, args, (res) => {
+      if (res.ok) onEntry?.(res.entry);
+      else setState((s) => ({ ...s, error: res.error }));
     }),
     [state.roomCode, state.playerId],
   );
 
   const rollSanity = useCallback<TableContextValue['rollSanity']>(
-    (args, onEntry) => guardedEmit<RollAck>(SOCKET_EVENTS.rollSanity, args, (res) => {
-      if (res.ok) onEntry?.(res.entry);
-      else setState((s) => ({ ...s, error: res.error }));
+    (args) => guardedEmit<RollAck>(SOCKET_EVENTS.rollSanity, args, (res) => {
+      if (!res.ok) setState((s) => ({ ...s, error: res.error }));
     }),
     [state.roomCode, state.playerId],
   );

@@ -8,8 +8,13 @@ import {
   MUSIC_PLAYLIST_ID,
   MUSIC_PLAYLIST_URL,
   YT_STATE,
+  MAX_OWN_TRACKS,
   fetchTrackTitles,
+  loadOwnTracks,
   loadYouTubeApi,
+  lookUpVideo,
+  parseYouTubeId,
+  saveOwnTracks,
   type MusicTrack,
   type YTPlayer,
 } from './youtube';
@@ -185,6 +190,12 @@ function KeeperMusic() {
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(music?.volume ?? DEFAULT_VOLUME);
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
+  // Tracks this Keeper added from YouTube links, kept on this device. They play like any other:
+  // the room is only ever sent the video id.
+  const [own, setOwn] = useState<MusicTrack[]>(loadOwnTracks);
+  const [link, setLink] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const { playlist, loadError, trackError } = useRoomPlayer({ hostRef, music, muted, withPlaylist: true });
 
   useEffect(() => {
@@ -199,8 +210,48 @@ function KeeperMusic() {
   }, [playlist]);
 
   function pickTrack(id: string) {
-    const track = tracks.find((x) => x.id === id);
+    const track = own.find((x) => x.id === id) ?? tracks.find((x) => x.id === id);
     if (track) setMusic({ videoId: track.id, title: track.title, playing: true, volume });
+  }
+
+  async function addTrack() {
+    const id = parseYouTubeId(link);
+    if (!id) {
+      setAddError(t.table.musicAddBad);
+      return;
+    }
+    // Already there (in the playlist or the Keeper's own list): just select it.
+    const known = own.find((x) => x.id === id) ?? tracks.find((x) => x.id === id);
+    if (known) {
+      setMusic({ videoId: known.id, title: known.title, playing: false, volume });
+      setLink('');
+      setAddError(null);
+      return;
+    }
+    if (own.length >= MAX_OWN_TRACKS) {
+      setAddError(t.table.musicAddFull);
+      return;
+    }
+    setAdding(true);
+    setAddError(null);
+    const found = await lookUpVideo(id);
+    setAdding(false);
+    if (!found.ok) {
+      setAddError(found.reason === 'offline' ? t.table.musicAddOffline : t.table.musicAddUnavailable);
+      return;
+    }
+    const next = [{ id, title: found.title }, ...own];
+    setOwn(next);
+    saveOwnTracks(next);
+    setLink('');
+    // Cued, not started: the Keeper decides when the room hears it.
+    setMusic({ videoId: id, title: found.title, playing: false, volume });
+  }
+
+  function removeTrack(id: string) {
+    const next = own.filter((x) => x.id !== id);
+    setOwn(next);
+    saveOwnTracks(next);
   }
 
   function changeVolume(next: number) {
@@ -208,7 +259,8 @@ function KeeperMusic() {
     if (music) setMusic({ ...music, volume: next });
   }
 
-  const loading = !loadError && tracks.length === 0;
+  const loading = !loadError && tracks.length === 0 && own.length === 0;
+  const playingOwn = music ? own.some((x) => x.id === music.videoId) : false;
 
   return (
     <Section
@@ -231,16 +283,65 @@ function KeeperMusic() {
       <select
         value={music?.videoId ?? ''}
         onChange={(e) => pickTrack(e.target.value)}
-        disabled={tracks.length === 0}
+        disabled={tracks.length === 0 && own.length === 0}
         className={`${FIELD} px-3 py-2 text-sm`}
       >
         <option value="">{loading ? t.table.musicLoading : t.table.musicPickTrack}</option>
-        {tracks.map((track) => (
-          <option key={track.id} value={track.id}>
-            {track.title}
-          </option>
-        ))}
+        {own.length > 0 && (
+          <optgroup label={t.table.musicOwnGroup}>
+            {own.map((track) => (
+              <option key={track.id} value={track.id}>
+                {track.title}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        {tracks.length > 0 && (
+          <optgroup label={t.table.musicPlaylistGroup}>
+            {tracks.map((track) => (
+              <option key={track.id} value={track.id}>
+                {track.title}
+              </option>
+            ))}
+          </optgroup>
+        )}
       </select>
+
+      <div className="flex gap-2">
+        <input
+          type="text"
+          inputMode="url"
+          value={link}
+          onChange={(e) => {
+            setLink(e.target.value);
+            setAddError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && link.trim() && !adding) void addTrack();
+          }}
+          placeholder={t.table.musicAddPlaceholder}
+          aria-label={t.table.musicAddPlaceholder}
+          className={`${FIELD} min-w-0 flex-1 px-3 py-2 text-sm`}
+        />
+        <button
+          type="button"
+          disabled={!link.trim() || adding}
+          onClick={() => void addTrack()}
+          className={`${BRASS_BTN} shrink-0 px-4 text-xs font-semibold uppercase tracking-wider`}
+        >
+          {adding ? '…' : t.table.musicAdd}
+        </button>
+      </div>
+      {addError && <p className="text-sm text-oxblood">{addError}</p>}
+      {playingOwn && music && (
+        <button
+          type="button"
+          onClick={() => removeTrack(music.videoId)}
+          className="self-start text-[11px] uppercase tracking-wider text-oxblood/80 transition-colors hover:text-oxblood"
+        >
+          {t.table.musicRemove}
+        </button>
+      )}
 
       <div className="flex gap-2">
         <button
