@@ -1,4 +1,5 @@
 import basement from '../assets/handouts/basement.png';
+import corbittDagger from '../assets/handouts/corbitt-dagger.jpg';
 import cultSymbol from '../assets/handouts/cult-symbol.png';
 import firstFloor from '../assets/handouts/first-floor.png';
 import secondFloor from '../assets/handouts/second-floor.png';
@@ -22,6 +23,8 @@ export interface Handout {
   id: string;
   scenario: ScenarioId;
   src: string;
+  /** Where an image from outside comes from, shown as a small line under it. */
+  credit?: string;
 }
 
 export const HANDOUTS: Handout[] = [
@@ -29,6 +32,13 @@ export const HANDOUTS: Handout[] = [
   { id: 'basement', scenario: 'haunting', src: basement },
   { id: 'first-floor', scenario: 'haunting', src: firstFloor },
   { id: 'second-floor', scenario: 'haunting', src: secondFloor },
+  {
+    id: 'corbitt-dagger',
+    scenario: 'haunting',
+    src: corbittDagger,
+    // A stand-in: a real late-15th-century French dagger, not the scenario's own artwork.
+    credit: 'Dagger, French, late 15th c. — The Metropolitan Museum of Art, Open Access (CC0)',
+  },
 ];
 
 /** Matches the server's cap on how many images can be up at once. */

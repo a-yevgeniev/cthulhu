@@ -5,6 +5,7 @@ import { useTable } from './TableContext';
 import Section from './Section';
 import { BRASS_BTN, FIELD, GHOST_BTN, LABEL } from './styles';
 import {
+  BUILT_IN_TRACKS,
   MUSIC_PLAYLIST_ID,
   MUSIC_PLAYLIST_URL,
   YT_STATE,
@@ -21,13 +22,15 @@ import {
 
 const DEFAULT_VOLUME = 60;
 /** How long to wait for a play request to start before assuming the browser blocked it. */
-const AUTOPLAY_CHECK_MS = 4000;
+const AUTOPLAY_CHECK_MS = 1500;
 
 interface RoomPlayerOptions {
   hostRef: RefObject<HTMLDivElement | null>;
   music: MusicState | null;
   /** This device only — never sent to the room. */
   muted: boolean;
+  /** This device's own level, 0–1, applied on top of the Keeper's volume. Never sent to the room. */
+  gain?: number;
   /** The Keeper's player cues the whole playlist so the track list can be read from it. */
   withPlaylist: boolean;
 }
@@ -38,7 +41,7 @@ interface RoomPlayerOptions {
  * track list. Playback position isn't synced (ambience loops), so a track that ends restarts
  * itself and a listener who joins late simply starts from the top.
  */
-function useRoomPlayer({ hostRef, music, muted, withPlaylist }: RoomPlayerOptions) {
+function useRoomPlayer({ hostRef, music, muted, gain = 1, withPlaylist }: RoomPlayerOptions) {
   const playerRef = useRef<YTPlayer | null>(null);
   const loadedVideoId = useRef<string | null>(null);
   const playingRef = useRef(false);
@@ -51,7 +54,7 @@ function useRoomPlayer({ hostRef, music, muted, withPlaylist }: RoomPlayerOption
   // Primitives, so the effects below depend on exactly what they use.
   const videoId = music?.videoId ?? null;
   const playing = music?.playing ?? false;
-  const volume = music?.volume ?? DEFAULT_VOLUME;
+  const volume = Math.round((music?.volume ?? DEFAULT_VOLUME) * gain);
   playingRef.current = playing;
 
   useEffect(() => {
@@ -156,6 +159,18 @@ function useRoomPlayer({ hostRef, music, muted, withPlaylist }: RoomPlayerOption
     return () => window.clearTimeout(timer);
   }, [ready, videoId, playing]);
 
+  // Phones won't start sound until the page has had a tap. While the room's music should be
+  // playing and isn't, the next tap anywhere starts it — the player needn't hunt for a button.
+  useEffect(() => {
+    if (!ready || !playing) return;
+    function unlock() {
+      const state = playerRef.current?.getPlayerState();
+      if (state !== YT_STATE.PLAYING && state !== YT_STATE.BUFFERING) playerRef.current?.playVideo();
+    }
+    document.addEventListener('pointerdown', unlock, true);
+    return () => document.removeEventListener('pointerdown', unlock, true);
+  }, [ready, playing]);
+
   /** Call from a tap: browsers only let a page start audio after a user gesture. */
   function resume() {
     playerRef.current?.playVideo();
@@ -197,6 +212,8 @@ function KeeperMusic() {
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const { playlist, loadError, trackError } = useRoomPlayer({ hostRef, music, muted, withPlaylist: true });
+  // The playlist's tracks, then the built-in ones it doesn't already have.
+  const listed = [...tracks, ...BUILT_IN_TRACKS.filter((b) => !tracks.some((x) => x.id === b.id))];
 
   useEffect(() => {
     if (!playlist) return;
@@ -210,7 +227,7 @@ function KeeperMusic() {
   }, [playlist]);
 
   function pickTrack(id: string) {
-    const track = own.find((x) => x.id === id) ?? tracks.find((x) => x.id === id);
+    const track = own.find((x) => x.id === id) ?? listed.find((x) => x.id === id);
     if (track) setMusic({ videoId: track.id, title: track.title, playing: true, volume });
   }
 
@@ -221,9 +238,9 @@ function KeeperMusic() {
       return;
     }
     // Already there (in the playlist or the Keeper's own list): just select it.
-    const known = own.find((x) => x.id === id) ?? tracks.find((x) => x.id === id);
+    const known = own.find((x) => x.id === id) ?? listed.find((x) => x.id === id);
     if (known) {
-      setMusic({ videoId: known.id, title: known.title, playing: false, volume });
+      setMusic({ videoId: known.id, title: known.title, playing: true, volume });
       setLink('');
       setAddError(null);
       return;
@@ -244,8 +261,8 @@ function KeeperMusic() {
     setOwn(next);
     saveOwnTracks(next);
     setLink('');
-    // Cued, not started: the Keeper decides when the room hears it.
-    setMusic({ videoId: id, title: found.title, playing: false, volume });
+    // Starts at once, exactly as picking a track from the list does.
+    setMusic({ videoId: id, title: found.title, playing: true, volume });
   }
 
   function removeTrack(id: string) {
@@ -268,6 +285,31 @@ function KeeperMusic() {
       title={t.table.music}
       summary={music ? `${music.playing ? '▶ ' : '❚❚ '}${music.title || t.table.musicNothing}` : undefined}
       keepMounted
+      collapsedExtra={
+        <div className="flex items-center gap-3 border-t border-ink-line/60 px-4 py-1">
+          <button
+            type="button"
+            disabled={!music}
+            onClick={() => music && setMusic({ ...music, playing: !music.playing })}
+            aria-label={music?.playing ? t.table.musicStop : t.table.musicPlay}
+            className={`${BRASS_BTN} grid h-11 w-11 shrink-0 place-items-center text-sm`}
+          >
+            {music?.playing ? '❚❚' : '▶'}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={volume}
+            disabled={!music}
+            aria-label={t.table.musicVolume}
+            onChange={(e) => changeVolume(Number(e.target.value))}
+            className="h-1 min-w-0 flex-1 accent-brass disabled:opacity-40"
+          />
+          <span className="w-7 text-right text-xs tabular-nums text-paper-dim">{volume}</span>
+        </div>
+      }
     >
       <a
         href={MUSIC_PLAYLIST_URL}
@@ -283,7 +325,7 @@ function KeeperMusic() {
       <select
         value={music?.videoId ?? ''}
         onChange={(e) => pickTrack(e.target.value)}
-        disabled={tracks.length === 0 && own.length === 0}
+        disabled={listed.length === 0 && own.length === 0}
         className={`${FIELD} px-3 py-2 text-sm`}
       >
         <option value="">{loading ? t.table.musicLoading : t.table.musicPickTrack}</option>
@@ -296,9 +338,9 @@ function KeeperMusic() {
             ))}
           </optgroup>
         )}
-        {tracks.length > 0 && (
+        {listed.length > 0 && (
           <optgroup label={t.table.musicPlaylistGroup}>
-            {tracks.map((track) => (
+            {listed.map((track) => (
               <option key={track.id} value={track.id}>
                 {track.title}
               </option>
@@ -375,25 +417,64 @@ function KeeperMusic() {
   );
 }
 
+const LOCAL_MIX_KEY = 'coc7-music-local';
+
+/** How this device hears the room's music: its own mute and level (a share of the Keeper's volume).
+ * Remembered between visits, because a player who muted it doesn't want it back after a reload. */
+function useLocalMix() {
+  const [mix, setMix] = useState<{ muted: boolean; gain: number }>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LOCAL_MIX_KEY) ?? 'null') as { muted?: unknown; gain?: unknown } | null;
+      const gain = Number(saved?.gain);
+      return { muted: saved?.muted === true, gain: Number.isFinite(gain) ? Math.min(100, Math.max(0, gain)) : 100 };
+    } catch {
+      return { muted: false, gain: 100 };
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_MIX_KEY, JSON.stringify(mix));
+    } catch {
+      // not remembered; harmless
+    }
+  }, [mix]);
+  return [mix, setMix] as const;
+}
+
 function ListenerMusicBar({ music }: { music: MusicState }) {
   const { t } = useLocale();
   const hostRef = useRef<HTMLDivElement>(null);
-  const [muted, setMuted] = useState(false);
-  const { blocked, resume } = useRoomPlayer({ hostRef, music, muted, withPlaylist: false });
+  const [mix, setMix] = useLocalMix();
+  const { blocked, resume } = useRoomPlayer({ hostRef, music, muted: mix.muted, gain: mix.gain / 100, withPlaylist: false });
 
   return (
     <div className="flex flex-col gap-2 border border-ink-line px-4 py-3">
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className={LABEL}>{t.table.music}</h2>
+        <div className="min-w-0" aria-live="polite">
+          <h2 className={`${LABEL} ${music.playing ? 'text-brass' : ''}`}>
+            {t.table.music} · {music.playing ? t.table.musicPlaying : t.table.musicStopped}
+          </h2>
           <div className={`truncate text-sm ${music.playing ? 'text-paper' : 'text-paper-dim'}`}>
             {music.title || t.table.musicNothing}
           </div>
         </div>
-        <MuteButton muted={muted} onToggle={() => setMuted((m) => !m)} />
+        <MuteButton muted={mix.muted} onToggle={() => setMix((m) => ({ ...m, muted: !m.muted }))} />
       </div>
+      <label className="flex items-center gap-3">
+        <span className={LABEL}>{t.table.musicVolume}</span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={mix.gain}
+          onChange={(e) => setMix((m) => ({ ...m, gain: Number(e.target.value) }))}
+          className="h-1 min-w-0 flex-1 accent-brass"
+        />
+        <span className="w-8 text-right text-xs tabular-nums text-paper-dim">{mix.gain}</span>
+      </label>
       {blocked && music.playing && (
-        <button type="button" onClick={resume} className={`${BRASS_BTN} py-2 text-xs uppercase tracking-widest`}>
+        <button type="button" onClick={resume} className={`${BRASS_BTN} min-h-11 py-2 text-xs uppercase tracking-widest`}>
           {t.table.musicTapForSound}
         </button>
       )}

@@ -195,6 +195,8 @@ export interface Translations {
     musicUnmute: string;
     musicNothing: string;
     musicTapForSound: string;
+    musicPlaying: string;
+    musicStopped: string;
     musicPlaylistLink: string;
     musicAddPlaceholder: string;
     musicAdd: string;
@@ -615,6 +617,8 @@ export const en: Translations = {
     musicUnmute: 'Unmute',
     musicNothing: 'Nothing playing',
     musicTapForSound: 'Tap to enable sound',
+    musicPlaying: 'playing',
+    musicStopped: 'stopped',
     musicPlaylistLink: 'Playlist on YouTube',
     musicAddPlaceholder: 'Paste a YouTube link to add a track',
     musicAdd: 'Add',
@@ -663,6 +667,10 @@ export const en: Translations = {
     'second-floor': {
       title: 'Second floor',
       alt: 'Hand-drawn floor plan of the second floor: three large rooms in a row and a staircase.',
+    },
+    'corbitt-dagger': {
+      title: "Corbitt's dagger",
+      alt: 'An old dagger with a long narrow blade and a hooked horn and bone hilt, laid on a pale background.',
     },
   },
   npcs: {
@@ -940,6 +948,8 @@ export const uk: Translations = {
     musicUnmute: 'Увімкнути',
     musicNothing: 'Нічого не грає',
     musicTapForSound: 'Торкніться, щоб увімкнути звук',
+    musicPlaying: 'грає',
+    musicStopped: 'зупинено',
     musicPlaylistLink: 'Плейлист на YouTube',
     musicAddPlaceholder: 'Вставте посилання на YouTube, щоб додати трек',
     musicAdd: 'Додати',
@@ -988,6 +998,10 @@ export const uk: Translations = {
     'second-floor': {
       title: 'Другий поверх',
       alt: 'Накреслений від руки план другого поверху: три великі кімнати в ряд і сходи.',
+    },
+    'corbitt-dagger': {
+      title: 'Ніж Корбіта',
+      alt: 'Старий кинджал з довгим вузьким клинком і зігнутим руків’ям з рогу та кістки на світлому тлі.',
     },
   },
   npcs: {

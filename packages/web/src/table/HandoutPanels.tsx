@@ -50,9 +50,9 @@ export function HandoutDisplay() {
   const { handouts, isKeeper, changeHandouts } = useTable();
   // An id this app doesn't know (say, a newer handout than this build) just shows nothing.
   const images = handouts.flatMap((h) => {
-    if (h.upload) return [{ id: h.id, src: h.upload.dataUrl, alt: h.upload.title }];
+    if (h.upload) return [{ id: h.id, src: h.upload.dataUrl, alt: h.upload.title, credit: undefined }];
     const bundled = findHandout(h.id);
-    return bundled ? [{ id: h.id, src: bundled.src, alt: t.handouts[bundled.id]?.alt ?? '' }] : [];
+    return bundled ? [{ id: h.id, src: bundled.src, alt: t.handouts[bundled.id]?.alt ?? '', credit: bundled.credit }] : [];
   });
   if (images.length === 0) return null;
 
@@ -88,6 +88,7 @@ export function HandoutDisplay() {
               )}
             </div>
             <img src={image.src} alt={image.alt} className="mx-auto h-auto max-h-[85vh] w-auto max-w-full object-contain" />
+            {image.credit && <figcaption className="text-center text-[10px] text-paper-dim">{image.credit}</figcaption>}
           </figure>
         ))}
       </div>

@@ -664,6 +664,9 @@ function RoomView() {
         </div>
       </div>
 
+      {/* The music sits by the room code, not at the foot of the page: whether it is playing, and the way to quiet it, are what a player looks for. */}
+      {!isKeeper && <MusicPanel />}
+
       <HandoutCue />
 
       {prompt && (
@@ -696,7 +699,7 @@ function RoomView() {
       {isKeeper && <KeeperRequestPanel />}
       {isKeeper && <NpcPanel />}
       {isKeeper && <HandoutLibrary />}
-      <MusicPanel />
+      {isKeeper && <MusicPanel />}
 
       <HandoutDisplay />
     </div>

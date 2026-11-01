@@ -15,6 +15,7 @@ export default function Section({
   summary,
   defaultOpen = false,
   keepMounted = false,
+  collapsedExtra,
   children,
 }: {
   id: string;
@@ -22,6 +23,9 @@ export default function Section({
   summary?: ReactNode;
   defaultOpen?: boolean;
   keepMounted?: boolean;
+  /** Controls kept within reach while the section is folded (a play button, a volume slider). They
+   * sit under the header, outside its toggle button, and go away when the section is open. */
+  collapsedExtra?: ReactNode;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(() => rememberedSectionOpen(id, defaultOpen));
@@ -57,6 +61,7 @@ export default function Section({
           </svg>
         </button>
       </h2>
+      {!open && collapsedExtra}
       {(open || keepMounted) && (
         <div
           id={bodyId}

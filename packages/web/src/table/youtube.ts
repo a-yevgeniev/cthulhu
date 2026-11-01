@@ -74,6 +74,13 @@ export interface MusicTrack {
   title: string;
 }
 
+/** Tracks every Keeper gets alongside the playlist's, for ones the playlist doesn't have. The
+ * playlist is someone else's on YouTube, so a track worth keeping goes here instead. */
+export const BUILT_IN_TRACKS: MusicTrack[] = [
+  { id: 'JLcvz9C-AR0', title: '1920s Jazz Music' },
+  { id: 'n8Na1oEh0-I', title: 'The Haunting (Graham Plowman)' },
+];
+
 const titleCache = new Map<string, string>();
 
 /** The playlist's videos are titled "Name | Call of Cthulhu Ambient Music Vol.N" — the track
