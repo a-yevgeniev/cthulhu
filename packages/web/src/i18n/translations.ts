@@ -207,6 +207,7 @@ export interface Translations {
     musicOwnGroup: string;
     musicPlaylistGroup: string;
     musicRemove: string;
+    musicLevelNote: string;
     scenarioLabel: string;
     scenarioNone: string;
     inviteLink: string;
@@ -629,6 +630,7 @@ export const en: Translations = {
     musicOwnGroup: 'My tracks',
     musicPlaylistGroup: 'Playlist',
     musicRemove: 'Remove from my tracks',
+    musicLevelNote: 'Volume is remembered for each track.',
     scenarioLabel: 'Scenario',
     scenarioNone: 'Free table',
     inviteLink: 'Invite link',
@@ -960,6 +962,7 @@ export const uk: Translations = {
     musicOwnGroup: 'Мої треки',
     musicPlaylistGroup: 'Плейлист',
     musicRemove: 'Видалити з моїх треків',
+    musicLevelNote: "Гучність запам'ятовується для кожного треку.",
     scenarioLabel: 'Пригода',
     scenarioNone: 'Вільний стіл',
     inviteLink: 'Посилання-запрошення',

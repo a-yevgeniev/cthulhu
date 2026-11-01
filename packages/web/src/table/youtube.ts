@@ -158,6 +158,32 @@ export async function lookUpVideo(videoId: string): Promise<VideoLookup> {
   }
 }
 
+const LEVELS_KEY = 'coc7-music-levels';
+
+/** The volume the Keeper last set for each track, by video id. Recordings differ a lot in loudness
+ * and YouTube's embedded player offers no normalisation, so each track is set once and then keeps
+ * its level. */
+export function loadTrackLevels(): Record<string, number> {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LEVELS_KEY) ?? '{}') as Record<string, unknown>;
+    const levels: Record<string, number> = {};
+    for (const [id, v] of Object.entries(parsed)) {
+      if (VIDEO_ID.test(id) && typeof v === 'number' && Number.isFinite(v)) levels[id] = Math.min(100, Math.max(0, Math.round(v)));
+    }
+    return levels;
+  } catch {
+    return {};
+  }
+}
+
+export function saveTrackLevels(levels: Record<string, number>): void {
+  try {
+    localStorage.setItem(LEVELS_KEY, JSON.stringify(levels));
+  } catch {
+    // not remembered; harmless
+  }
+}
+
 const OWN_TRACKS_KEY = 'coc7-music-tracks';
 export const MAX_OWN_TRACKS = 50;
 

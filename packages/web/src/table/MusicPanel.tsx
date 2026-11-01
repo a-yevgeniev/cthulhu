@@ -12,10 +12,12 @@ import {
   MAX_OWN_TRACKS,
   fetchTrackTitles,
   loadOwnTracks,
+  loadTrackLevels,
   loadYouTubeApi,
   lookUpVideo,
   parseYouTubeId,
   saveOwnTracks,
+  saveTrackLevels,
   type MusicTrack,
   type YTPlayer,
 } from './youtube';
@@ -208,6 +210,9 @@ function KeeperMusic() {
   // Tracks this Keeper added from YouTube links, kept on this device. They play like any other:
   // the room is only ever sent the video id.
   const [own, setOwn] = useState<MusicTrack[]>(loadOwnTracks);
+  // Each track keeps the volume it was last set to, so a quiet recording and a loud one both sound
+  // right every time without the Keeper riding the slider.
+  const [levels, setLevels] = useState<Record<string, number>>(loadTrackLevels);
   const [link, setLink] = useState('');
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -228,7 +233,14 @@ function KeeperMusic() {
 
   function pickTrack(id: string) {
     const track = own.find((x) => x.id === id) ?? listed.find((x) => x.id === id);
-    if (track) setMusic({ videoId: track.id, title: track.title, playing: true, volume });
+    if (track) playTrack(track);
+  }
+
+  /** Starts a track at its own remembered level (or the current one, if it has none yet). */
+  function playTrack(track: MusicTrack) {
+    const level = levels[track.id] ?? volume;
+    setVolume(level);
+    setMusic({ videoId: track.id, title: track.title, playing: true, volume: level });
   }
 
   async function addTrack() {
@@ -240,7 +252,7 @@ function KeeperMusic() {
     // Already there (in the playlist or the Keeper's own list): just select it.
     const known = own.find((x) => x.id === id) ?? listed.find((x) => x.id === id);
     if (known) {
-      setMusic({ videoId: known.id, title: known.title, playing: true, volume });
+      playTrack(known);
       setLink('');
       setAddError(null);
       return;
@@ -262,7 +274,7 @@ function KeeperMusic() {
     saveOwnTracks(next);
     setLink('');
     // Starts at once, exactly as picking a track from the list does.
-    setMusic({ videoId: id, title: found.title, playing: true, volume });
+    playTrack({ id, title: found.title });
   }
 
   function removeTrack(id: string) {
@@ -273,7 +285,11 @@ function KeeperMusic() {
 
   function changeVolume(next: number) {
     setVolume(next);
-    if (music) setMusic({ ...music, volume: next });
+    if (!music) return;
+    setMusic({ ...music, volume: next });
+    const nextLevels = { ...levels, [music.videoId]: next };
+    setLevels(nextLevels);
+    saveTrackLevels(nextLevels);
   }
 
   const loading = !loadError && tracks.length === 0 && own.length === 0;
@@ -410,8 +426,9 @@ function KeeperMusic() {
         />
         <span className="w-8 text-right text-xs tabular-nums text-paper-dim">{volume}</span>
       </label>
+      <p className="-mt-1 text-[11px] text-paper-dim">{t.table.musicLevelNote}</p>
 
-      {loadError && <p className="text-sm text-oxblood">{t.table.musicLoadError}</p>}
+      {loadError &&<p className="text-sm text-oxblood">{t.table.musicLoadError}</p>}
       {trackError && <p className="text-sm text-oxblood">{t.table.musicTrackError}</p>}
     </Section>
   );
